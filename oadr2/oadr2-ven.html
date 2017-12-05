@@ -1,0 +1,112 @@
+<style>
+    .header {
+        text-decoration: underline;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+    .bordered {
+        padding-left: 12px;
+        padding-top: 4px;
+        border: 1px solid lightgrey;
+        box-sizing: border-box;
+    }
+</style>
+
+<script type="text/javascript">
+
+    RED.nodes.registerType('VEN', {
+        category: 'OADR2',
+        color: '#ADADAD',
+        defaults: {
+            name: {value: "", required: false},
+            vtnurl: { value: "", required: true},
+            log: { value: true, required: true },
+            pathlog: {value: "", required: false}
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "white-globe.png",
+        label: function() {
+            let tmpName = "OADR2 VEN";
+            return this.name||tmpName;
+        },
+
+    });
+
+</script>
+
+<script type="text/x-red" data-template-name="VEN">
+
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name (defaults to OCPP Server:<PORT>)" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-vtnurl"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-vtnurl" placeholder="Name (defaults to OCPP Server:<PORT>)" />
+    </div>
+    <div class="header">Logging</div>
+    <div class="bordered">
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" value="" id="node-input-log" onclick="toggleEnabled(this)"/>
+                logging enabled
+            </label>
+        </div>
+        <div id="containerlog" class="form-row">
+            <label for="node-input-pathlog" >
+                <i class="icon-globe"></i> Path
+            </label>
+            <input type="text" id="node-input-pathlog" placeholder="log file path and name" />
+        </div>
+    </div>
+    
+</script>
+
+<script type="text/x-red" data-help-name="VEN">
+    <p>Central System Service (CS) that accepts incomming requests from OCPP EVSEs (CP)</p>
+
+    <h3>Configuration Settings</h3>
+    <dl>
+        <dt>Name:</dt>
+        <dd>The name shown on the workspace</dd>
+        <dt>logging enabled</dt>
+        <dd>enables/disables logging for this node</dd>
+        <dt>Path</dt>
+        <dd>Path to file used for logging. Required if "logging enabled" is checked, otherwise logging will be disabled at runtime</dd>        
+    </dl>
+
+        <h3>Outputs</h3>
+            <dl class="messge-properties">
+                <dt>ocpp <span class="property-type">object</dt>
+                <dd><code>msg.ocpp</code> objcet containing ocpp related information
+                    <ul>
+                        <li><code>command</code>: the incomming request command</li>
+                        <li><code>chargeBoxIdentity</code>: name identifying the charge box</li>
+                        <li><code>From</code>: optional address of incoming request (SOAP only)</li>
+                        <li><code>MessageID</code>: optional incoming request message id</li>
+                    </ul>
+                </dd>
+                <dt>payload <span class="property-type">object</dt>
+                <dd><code>msg.payload</code> object contains the following:
+                    <ul>
+                        <li><code>command</code>: the incomming request command</li>
+                        <li><code>data</code>: arguments received with the incoming request command stored as an key/value pair</li>
+                    </ul>
+
+                </dd>
+            </dl>
+
+    <h3>Details</h3>
+        <p><code>msg.msgID</code> contains a unique message identifier that must be passed to the ocpp resonse node along with 
+        the payload (if any) of the response. It is recommended that the <code>msg</code> output from this node remain in tact 
+        and passed all the way through to the ocpp response node, only modifying or replacing the <code>msg.payload</code> portion</p>
+        <p>The response to each incoming message has a lifespan timeout of 2 minutes, so any
+        responses to messages must be returned within that time or the message is simply discarded</p>
+        <p>The <code>msg.payload.data</code> arguments object received from the request vary depending on the command. Refer to the OCPP specification for information
+            about required and optional parameters that may be received for each command.
+
+</script>
+
+
+</script

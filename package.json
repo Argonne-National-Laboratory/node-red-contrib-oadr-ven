@@ -1,0 +1,33 @@
+{
+  "name": "oadr2_ven",
+  "version": "0.1.0",
+  "description": "Open ADR 2.0b VEN",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "mon": "nodemon -x node-red"
+  },
+  "author": "Bryan Nystrom <bnystrom@natara.com> (http://www.natara.com)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=6.5.0"
+  },
+  "keywords": [
+    "ocpp"
+  ],
+  "node-red": {
+    "nodes": {
+      "oadr2-ven": "oadr2/oadr2-ven.js"
+    }
+  },
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "data2xml": "^1.2.5",
+    "express": "^4.16.2",
+    "fast-xml-parser": "^2.7.4",
+    "request": "^2.83.0",
+    "uuid": "^3.1.0",
+    "xml-js": "^1.5.2",
+    "xmlbuilder": "^9.0.4"
+  }
+}
