@@ -24,9 +24,24 @@ const app = express();
 
 const EventEmitter = events.EventEmitter;
 
+let tlsNode;
+let oadrProfile;
+
 let ee;
 
+let _ids = {
+  venID: '',
+  vtnID: '',
+  registrationID: ''
+}
+
 ee = new EventEmitter();
+
+// var pfxFilePath = path.resolve(__dirname, 'ssl/node.css.ven.cert.pfx');
+// var crtFilePath = path.resolve(__dirname, 'ssl/node.css.ven.cert.pem');
+// var keyFilePath = path.resolve(__dirname, 'ssl/node.css.ven.key.pem');
+// var caFilePath = path.resolve(__dirname, 'ssl/ca-chain.cert.pem');
+
 
 ////////////////////////////////////
 // Node-Red stuff
@@ -43,8 +58,12 @@ module.exports = function (RED) {
     msg.oadr.requestID = uuid||'unknown';
     let jsdata = xmlconvert.parse(body, { ignoreNameSpace: true });
     if(jsdata){
-      if (jsdata.oadrPayload && jsdata.oadrPayload.oadrSignedObject){
+      
+      if ( oadrProfile !== '2.0a' && jsdata.oadrPayload && jsdata.oadrPayload.oadrSignedObject){
         msg.payload.data = jsdata.oadrPayload.oadrSignedObject;        
+      }
+      else if (oadrProfile == '2.0a'){
+        msg.payload.data = jsdata;
       }
       msg.oadr.responseType = getOadrCommand(msg.payload.data);
     }
@@ -58,7 +77,7 @@ module.exports = function (RED) {
     msg.payload = {};
     //msg.oadr.requestID = uuid||'unknown';
     let jsdata = xmlconvert.parse(body, { ignoreNameSpace: true });
-    console.log(jsdata);
+    //console.log(jsdata);
     if(jsdata){
       if (jsdata.oadrPayload && jsdata.oadrPayload.oadrSignedObject){
         msg.payload.data = jsdata.oadrPayload.oadrSignedObject;
@@ -90,12 +109,19 @@ module.exports = function (RED) {
     let totalSec = 0;
     let valStr;
     if (durStr.match(exp)){
+      // Days
+      exp = new RegExp(/(\d+)D/);
+      valStr = durStr.match(exp);
+      if(valStr) totalSec += parseInt(valStr[1]) * 60 * 60 * 24;
+      // Hours
       exp = new RegExp(/(\d+)H/);
       valStr = durStr.match(exp);
-      if(valStr) totalSec = parseInt(valStr[1]) * 60 * 60;
+      if(valStr) totalSec += parseInt(valStr[1]) * 60 * 60;
+      // Minutes
       exp = new RegExp(/(\d+)M/);
       valStr = durStr.match(exp);
       if(valStr) totalSec += parseInt(valStr[1]) * 60;
+      // Seconds
       exp = new RegExp(/(\d+)S/);
       valStr = durStr.match(exp);
       if(valStr) totalSec += parseInt(valStr[1]);
@@ -104,32 +130,64 @@ module.exports = function (RED) {
   }
 
   function getXMLpayload(payloadName,payload){
-    const payloadXML = {
-      _attr: {
-        'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-        'xmlns:xsd': 'http://www.w3.org/2001/XMLSchema',
-        xmlns: 'http://openadr.org/oadr-2.0b/2012/07'
-      },
-      oadrSignedObject: {
-      }
-    };
-    payloadXML.oadrSignedObject[payloadName] = payload;
+    let returnPayload;
+    if (oadrProfile !== '2.0a'){
+      const payloadXML = {
+        _attr: {
+          xmlns: `http://openadr.org/oadr-${oadrProfile}/2012/07`,
+          'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+          'xmlns:xsd': 'http://www.w3.org/2001/XMLSchema'
+        },
+        oadrSignedObject: {}
+      };
+      payloadXML.oadrSignedObject[payloadName] = payload;  
+      returnPayload = convert('oadrPayload', payloadXML);
+    }
+    else {
+      returnPayload = convert(payloadName, payload);
+    }
     
-    return convert('oadrPayload', payloadXML);
+    return returnPayload;
   }
 
 
   function sendRequest(url, ei, xml, cb) {
     
-    const _url = `${url}/OpenADR2/Simple/2.0b/${ei}`;
+    if (!((url.indexOf("http://") === 0) || (url.indexOf("https://") === 0))) {
+      if (tlsNode) {
+          url = "https://"+url;
+      } else {
+          url = "http://"+url;
+      }
+    }
+
+    let url_profile = (oadrProfile == '2.0a') ? '' : `${oadrProfile}/`;
+    // const _url = `${url}/OpenADR2/Simple/2.0b/${ei}`;
+    const _url = `${url}/OpenADR2/Simple/${url_profile}${ei}`;
+    
+    // console.log(_url);
+    // console.log(xml);
+
     const options = {
       url: _url,
       method: "POST",
       headers: {
         "content-type": "application/xml",  // <--Very important!!!
-      },
-      body: xml
+      }
+      // pfx: fs.readFileSync(pfxFilePath),
+      // cert: fs.readFileSync(crtFilePath),
+      // key: fs.readFileSync(keyFilePath),
+      // ca: fs.readFileSync(caFilePath),
+      // "rejectUnauthorized" : false,
+      //body: xml
     };
+
+    if (tlsNode) {
+      tlsNode.addTLSOptions(options);
+    }
+
+    options.body = xml;
+    
     request(options, cb);    
   }
     
@@ -142,7 +200,15 @@ module.exports = function (RED) {
     RED.nodes.createNode(this, config);
     const node = this;
 
-    const flowContext = node.context().flow;
+    if (config.tls) {
+      tlsNode = RED.nodes.getNode(config.tls);
+    }
+
+    oadrProfile = config.profile||'2.0b';
+
+    this.pushPort = config.pushport;
+
+    const flowContext = this.context().global;
 
     node.status({ fill: "blue", shape: "dot", text: "Waiting..." })
 
@@ -158,75 +224,99 @@ module.exports = function (RED) {
 
     app.use(bodyparser.text({type: 'application/xml'}));
 
-    app.post('/OpenADR2/Simple/2.0b/:reqType',(req, res) => {
+    let url_profile = (oadrProfile == '2.0a') ? '' : `${oadrProfile}/`;
+
+    let inUrl = `/OpenADR2/Simple/${url_profile}:reqType`;
+    
+
+    // app.post(`/OpenADR2/Simple/${url_profile}:reqType`,(req, res) => {
+    app.post(inUrl,(req, res) => {
       // console.log('req URL:', req.url);
       // console.log('req hostname:', req.hostname);
       // console.log('req IP:', req.ip);
       // console.log('req params: ', req.params)
       // console.log('req body:', req.body);
+      // console.log('Made it to the inbound server')
       let msg = prepareReqMsg(req.body);
 
       let oadrObj = msg.payload.data[msg.oadr.requestType];
-      console.log(JSON.stringify(oadrObj));
-      let ids = flowContext.get(`${node.name}:IDS`);
-      console.log(`${node.name}:IDS`,ids);
-      console.log(node.name);
+      //console.log(JSON.stringify(oadrObj));
+      // let ids = flowContext.get(`${node.name}:IDS`);
+      //console.log(`${node.name}:IDS`,ids);
+      //console.log(node.name);
       if (oadrObj.hasOwnProperty('venID')){
-        console.log(oadrObj.venID);
+        //console.log(oadrObj.venID);
+        //_ids.venID = oadrObj.venID;
+
+        // ids.venID = oadrObj.venID;
+        // flowContext.set(`${node.name}:IDs`, ids );
         //ids.venID = oadrObj.registrationID;
       } 
       // if (oadrObj.hasOwnProperty('venID')) ids.venID = oadrObj.venID;
       // if (oadrObj.hasOwnProperty('vtnID')) ids.vtnID = oadrObj.vtnID;
-      flowContext.set(`${node.name}:IDs`, ids);
+      // flowContext.set(`${node.name}:IDs`, ids);
 
       let id = msg.oadr.requestID||0;
 
-      let to = setTimeout(function (id) {
-        // node.log("kill:" + id);
-        if (ee.listenerCount(id) > 0) {
-          let evList = ee.listeners(id);
-          ee.removeListener(id, evList[0]);
-        }
-      }, 120 * 1000, id);
-
-      // This makes the response async so that we pass the responsibility onto the response node
-      ee.once(id, function (returnMsg) {
-        console.log(returnMsg);
-
-        clearTimeout(to);
-        // logData(msgTypeStr[response[msgType]], JSON.stringify(response).replace(/,/g, ", "));
-        
-        res.send(returnMsg);
-      });
+      if (msg.oadr.requestType == 'oadrDistributeEvent'){
+        res.sendStatus(200);
+      }
+      else {
+        let to = setTimeout(function (id) {
+          // node.log("kill:" + id);
+          if (ee.listenerCount(id) > 0) {
+            let evList = ee.listeners(id);
+            ee.removeListener(id, evList[0]);
+          }
+        }, 120 * 1000, id);
+  
+        // This makes the response async so that we pass the responsibility onto the response node
+        ee.once(id, function (returnMsg) {
+          //console.log(returnMsg);
+  
+          clearTimeout(to);
+          // logData(msgTypeStr[response[msgType]], JSON.stringify(response).replace(/,/g, ", "));
+          
+          res.send(returnMsg);
+        });
+  
+      }
 
       node.send(msg);
 
     });
 
-    console.log('starting server');
-    const server = app.listen(8843, () => console.log('listenting on port 8843'));
+    const server = app.listen(node.pushPort, () => {/* console.log(`listenting on port ${node.pushPort}`)*/ });
 
     // make local copies of our configuration
     this.logging = (typeof config.log === 'boolean')? config.log : false;
-    this.url = config.vtnurl;
+    this.url = config.url;
     this.pathlog = config.pathlog;
     this.name = config.name || "OADR2 VEN";
 
     node.status({ fill: "green", shape: "ring", text: 'blah' })
 
     // Initialize the ids for this VEN
-    let ids = {
-      registrationID: '000',
-      venID: '111',
-      vtnID: '222'
-    }
-    flowContext.set(`${node.name}:IDs`, ids);
+    flowContext.set(`${node.name}:IDs`, 
+      { 
+          registrationID : '', 
+          venID: '', 
+          vtnID: ''
+      });
 
     const payloadAttr = {
-      'd3p1:schemaVersion': '2.0b',
-      'xmlns:d3p1': 'http://docs.oasis-open.org/ns/energyinterop/201110',
-      'xmlns:pl': 'http://docs.oasis-open.org/ns/energyinterop/201110/payloads'
+      //'ei:schemaVersion': `${oadrProfile}`,
+      'xmlns:ei': 'http://docs.oasis-open.org/ns/energyinterop/201110',
+      'xmlns:pyld': 'http://docs.oasis-open.org/ns/energyinterop/201110/payloads'
     };
+    if (oadrProfile !== '2.0a'){
+      payloadAttr['ei:schemaVersion'] = oadrProfile;
+    }
+    else{
+      payloadAttr.xmlns = `http://openadr.org/oadr-${oadrProfile}/2012/07`;
+      payloadAttr['xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance';
+      payloadAttr['xmlns:xsd'] = 'http://www.w3.org/2001/XMLSchema';
+    }
 
     const QueryRegistration = function(msg) {
       let params = msg.payload;      
@@ -235,7 +325,7 @@ module.exports = function (RED) {
 
       let oadrQueryRegistration = {
         _attr: payloadAttr,
-        'pl:requestID': params.requestID||uuidv4()        
+        'pyld:requestID': params.requestID||uuidv4()        
       };
 
       let myXML = getXMLpayload('oadrQueryRegistration', oadrQueryRegistration);
@@ -255,6 +345,10 @@ module.exports = function (RED) {
                 venID: oadrObj.venID||'',
                 vtnID: oadrObj.vtnID||''
               }
+              _ids.registrationID = ids.registrationID;
+              _ids.venID = ids.venID;
+              _ids.vtnID = ids.vtnID;
+
               flowContext.set(`${node.name}:IDs`, ids);
             }
             // Include a parsed version of the polling frequency in the oadr info
@@ -277,12 +371,12 @@ module.exports = function (RED) {
       
       let oadrCreatePartyRegistration = {
         _attr: payloadAttr,
-        'pl:requestID': {
+        'pyld:requestID': {
           _value: params.requestID||uuidv4()
         },
-        oadrProfileName: "2.0b",
+        oadrProfileName: params.oadrProfileName||oadrProfile||"2.0b",
         oadrTransportName: "simpleHttp",
-        oadrREportONly: (typeof params.oadrReportOnly === 'boolean')? params.oadrReportOnly : false,
+        oadrReportONly: (typeof params.oadrReportOnly === 'boolean')? params.oadrReportOnly : false,
         oadrXmlSignature: false,
         oadrVenName: node.name,
         oadrHttpPullModel: (typeof params.oadrHttpPullModel === 'boolean')? params.oadrHttpPullModel : true,
@@ -304,8 +398,12 @@ module.exports = function (RED) {
               let ids = {
                 registrationID:  oadrObj.registrationID||'',
                 venID: oadrObj.venID||'',
-                vtnID: oadrObj.vtnID||''
+                vtnID: oadrObj.vtnID||''              
               }
+              _ids.registrationID = ids.registrationID;
+              _ids.venID = ids.venID;
+              _ids.vtnID = ids.vtnID;
+              
               flowContext.set(`${node.name}:IDs`, ids);
 
             }
@@ -334,9 +432,9 @@ module.exports = function (RED) {
 
       let oadrCancelPartyRegistration = {
         _attr: payloadAttr,
-        'pl:requestID': params.requestID||uuidv4(),
-        'd3p1:registrationID': params.registrationID||ids.registrationID||'',
-        'd3p1:venID': params.venID||ids.venID||''  
+        'pyld:requestID': params.requestID||uuidv4(),
+        'ei:registrationID': params.registrationID||_ids.registrationID||ids.registrationID||'',
+        'ei:venID': params.venID||ids.venID||''  
       }
 
       let myXML = getXMLpayload('oadrCancelPartyRegistration', oadrCancelPartyRegistration);
@@ -356,6 +454,10 @@ module.exports = function (RED) {
                 venID: '',
                 vtnID: ''
               }
+              _ids.registrationID = ids.registrationID;
+              _ids.venID = ids.venID;
+              _ids.vtnID = ids.vtnID;
+
               flowContext.set(`${node.name}:IDs`, ids);
             }
 
@@ -380,9 +482,9 @@ module.exports = function (RED) {
 
       let oadrRequestEvent = {
         _attr: payloadAttr,
-        'pl:eiRequestEvent': {
-          'pl:requestID': params.requestID||uuidv4(),
-          'd3p1:venID' : params.venID||venID,
+        'pyld:eiRequestEvent': {
+          'pyld:requestID': params.requestID||uuidv4(),
+          'ei:venID' : params.venID||_ids.venID||venID,
         } 
       };
 
@@ -393,6 +495,7 @@ module.exports = function (RED) {
           console.log('Error:', err);
         }    
         else {
+          //console.log(body);
           let msg = prepareResMsg(uuid, inCmd, body);
           node.send(msg);
         }
@@ -404,48 +507,53 @@ module.exports = function (RED) {
       const params = msg.payload;
       let inCmd = params.requestType||'unknown';
       let uuid = params.requestID||uuidv4();
-      
+      //console.log (params.requestID, uuid);
       let ids = flowContext.get(`${node.name}:IDs`);
       
-      let venID = '';
-      if (ids) { venID = ids.venID };
+
+      let venID = params.venID||'';
+      if (ids) { venID = ids.venID||venID };
+
+      //console.log(params.venID)
+
 
       let oadrCreatedEvent = {
         _attr: payloadAttr,
-        'pl:eiCreatedEvent': {
-            'd3p1:eiResponse': {
-                'd3p1:responseCode' : params.responseCode||200,
-                'd3p1:responseDescription': params.responseDescription|| 'OK',
-                'pl:requestID': uuid
+        'pyld:eiCreatedEvent': {
+            'ei:eiResponse': {
+                'ei:responseCode' : params.responseCode||200,
+                'ei:responseDescription': params.responseDescription|| 'OK',
+                'pyld:requestID': uuid
             },
-            'd3p1:venID': venID            
+            'ei:venID': ids.venID||venID            
         } 
       };
 
       if (params.eventResponses){
-        console.log(params.eventResponses);
-        console.log(params.eventResponses.length);
+        // console.log(params.eventResponses);
+        // console.log(params.eventResponses.length);
         if(params.eventResponses.length > 0){
-          oadrCreatedEvent['pl:eiCreatedEvent']['d3p1:eventResponses'] = {};
-          oadrCreatedEvent['pl:eiCreatedEvent']['d3p1:eventResponses']['d3p1:eventResponse'] = [];          
+          oadrCreatedEvent['pyld:eiCreatedEvent']['ei:eventResponses'] = {};
+          oadrCreatedEvent['pyld:eiCreatedEvent']['ei:eventResponses']['ei:eventResponse'] = [];          
           params.eventResponses.forEach(er => {
             let eventResponse = {};
-            eventResponse['d3p1:responseCode'] = er.responseCode||200;
-            eventResponse['d3p1:resonseDescription'] = er.responseDescription||'OK';
-            eventResponse['d3p1:requestID'] = er.requestID||uuid;
-            eventResponse['d3p1:qualifiedEventID'] = {};
-            eventResponse['d3p1:qualifiedEventID']['d3p1:eventID'] = er.qualifiedEventID.eventID||undefined;
-            eventResponse['d3p1:qualifiedEventID']['d3p1:modificationNumber'] = er.qualifiedEventID.modificationNumber;
+            eventResponse['ei:responseCode'] = er.responseCode||200;
+            eventResponse['ei:responseDescription'] = er.responseDescription||'OK';
+            eventResponse['pyld:requestID'] = er.requestID||uuid;
+            eventResponse['ei:qualifiedEventID'] = {};
+            eventResponse['ei:qualifiedEventID']['ei:eventID'] = er.qualifiedEventID.eventID||undefined;
+            eventResponse['ei:qualifiedEventID']['ei:modificationNumber'] = er.qualifiedEventID.modificationNumber;
             
-            eventResponse['d3p1:optType'] = er.optType;
-            oadrCreatedEvent['pl:eiCreatedEvent']['d3p1:eventResponses']['d3p1:eventResponse'].push(eventResponse);                   
+            eventResponse['ei:optType'] = er.optType;
+            oadrCreatedEvent['pyld:eiCreatedEvent']['ei:eventResponses']['ei:eventResponse'].push(eventResponse);                   
           });
         }
         
       }
 
+      //console.log(oadrCreatedEvent);
+
       let myXML = getXMLpayload('oadrCreatedEvent', oadrCreatedEvent);
-      
       // console.log(myXML);
 
       sendRequest(node.url,'EiEvent', myXML, function(err, response, body){
@@ -473,7 +581,7 @@ module.exports = function (RED) {
       
       let oadrPoll = {
         _attr: payloadAttr,
-        'd3p1:venID' :params.venID||venID
+        'ei:venID' :params.venID||_ids.venID||venID
       };
 
       let myXML = getXMLpayload('oadrPoll', oadrPoll);
@@ -499,15 +607,109 @@ module.exports = function (RED) {
         eiResponse: {
           responseCode: params.responseCode||200,
           responseDescription: params.responseDescription||'OK',
-          'pl:requestID': params.requestID
-        },
-        venID : params.venID
+          'pyld:requestID': params.requestID
+        }
+      }
+
+      if (oadrProfile !== '2.0a'){
+        oadrResponse.venID = params.venID;
       }
 
       let myXML = getXMLpayload('oadrResponse', oadrResponse);
-      console.log('Event Names:', ee.eventNames());
+      //console.log('Event Names:', ee.eventNames());
       ee.emit(params.requestID, myXML);
     }
+
+
+    const CreateOpt = function(msg) {
+      
+      let params = msg.payload;
+      let inCmd = msg.payload.requestType||'unknown';
+      let uuid = params.requestID||uuidv4();
+      let optID = params.optID||uuidv4();
+      let date1 = new Date().toISOString()
+      
+
+      let oadrCreateOpt = {
+        _attr: payloadAttr,
+        'ei:createdDateTime': date1,
+        'pyld:requestID': {
+          _value: params.requestID||uuidv4()
+        },
+
+        'ei:optID' : optID,
+        'ei:optType': params.optType||'optOut',
+        'ei:optReason': params.optReason||'notParticipating',
+        marketContext: {
+          _attr: {
+            xmlns: "http://docs.oasis-open.org/ns/emix/2011/06" 
+          }
+        },
+        'ei:venID': _ids.venID,
+        vavailability : {
+          _attr: {
+            xmlns: "urn:ietf:params:xml:ns:icalendar-2.0"
+          },
+          components: {
+            available: {
+              properties: {
+                dtstart: {
+                  'date-time': params.dtstart|| date1,
+                },
+                duration: {
+                  duration: params.duration||'PT1H'
+                }
+              }
+            }
+          }
+        } 
+        
+      };
+
+      let myXML = getXMLpayload('oadrCreateOpt', oadrCreateOpt);
+
+      sendRequest(node.url,'EiOpt', myXML, function(err, response, body){
+        if(err){
+          console.log('Error:', err);
+        }    
+        else {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
+        }
+      });
+            
+    }    
+
+    const CancelOpt = function(msg) {
+      
+      let params = msg.payload;
+      let inCmd = msg.payload.requestType||'unknown';
+      let uuid = params.requestID||uuidv4();
+      let optID = params.optID||uuidv4();
+
+      let oadrCancelOpt = {
+        _attr: payloadAttr,
+        'pyld:requestID': {
+          _value: params.requestID||uuidv4()
+        },
+        'ei:optID' : optID,
+        'ei:venID': _ids.venID
+      };
+
+      let myXML = getXMLpayload('oadrCancelOpt', oadrCancelOpt);
+
+      sendRequest(node.url,'EiOpt', myXML, function(err, response, body){
+        if(err){
+          console.log('Error:', err);
+        }    
+        else {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
+        }
+      });
+            
+    }    
+
 
     this.on('input', function (msg) {
 
@@ -539,13 +741,19 @@ module.exports = function (RED) {
             case('CreatedEvent'):
               CreatedEvent(msg);
               break;
+            case('CreateOpt'):
+              CreateOpt(msg);
+              break;
+            case('CancelOpt'):
+              CancelOpt(msg);
+              break;
           }
         }
         else{
-          console.log('Making a respnose');
+          //console.log('Making a respnose');
           switch(msg.payload.responseType){
             case('Response'):
-              console.log('doing a Response');
+              //console.log('doing a Response');
               Response(msg);
               break;
           }
@@ -556,7 +764,7 @@ module.exports = function (RED) {
 
 
     this.on('close', function (removed, done) {
-        console.log('About to stop the server...');
+        //console.log('About to stop the server...');
         // ee.removeAllListeners();
         //console.log(expressWs.getWss());
         //console.log(app);
@@ -596,187 +804,3 @@ module.exports = function (RED) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////
-    // console.log(myXML);
-
-    // wsdljs = xmlconvert.xml2js(wsdl15, {compact: true, spaces: 4});
-    // wsdlservice = wsdljs['wsdl:definitions']['wsdl:service']._attributes.name;
-    // wsdlport = wsdljs['wsdl:definitions']['wsdl:service']['wsdl:port']._attributes.name;
-
-    // const expressServer = express();
-
-    // expressServer.use(function(req,res,next){
-    //     // console.log('In middleware #########')
-    //     if (req.method == "POST" && typeof req.headers['content-type'] !== "undefined") {
-    //         if (req.headers['content-type'].toLowerCase().includes('action')){
-    //             // console.log(req.headers)
-    //             let ctstr = req.headers['content-type'];
-    //             let ctarr = ctstr.split(";");
-    //             // console.log("before: ", ctarr);
-    //             ctarr = ctarr.filter(function(ctitem){
-    //                 return ! ctitem.toLowerCase().includes('action')
-    //             })
-    //             // console.log("after: ", ctarr.join(";"));
-    //             req.headers['content-type'] = ctarr.join(";");
-    //         }
-    //     }
-    //     next();
-    // });
-
-
-
-    // const server = expressServer.listen(this.svcPort, function(){
-    //     let log_file;
-    //     if (node.pathlog == "") node.logging = false;
-    //     if (node.enabled15){
-    //         soapServer15 = soap.listen(expressServer,{ path: node.svcPath15, services: ocppService15, xml: wsdl15} );
-    //         soapServer15.log = (node.logging) ? logData : null;
-    //     }
-
-    //     if (node.enabled16){
-    //         soapServer16 = soap.listen(expressServer,{ path: node.svcPath16, services: ocppService16, xml: wsdl16} );
-    //         soapServer16.log = (node.logging) ? logData : null;
-    //     }
-    //     if (node.enabled16j){
-    //         const wspath = `${node.svcPath16j}/:cbid`;
-    //         logData('info', `Ready to recieve websocket requests on ${wspath}`);
-    //         //console.log(`ws path = ${wspath}`);
-    //         expressServer.ws(wspath, function(ws, req) {
-    //             const CALL = 2;
-    //             const CALLRESULT = 3;
-    //             const CALLERROR = 4;
-    //             const msgTypeStr = ['received', 'replied', 'error'];
-
-    //             const msgType = 0;
-    //             const msgId  = 1;
-    //             const msgAction = 2;
-    //             const msgCallPayload = 3;
-    //             const msgResPayload = 2;
-
-    //             let msg = {};
-    //             msg.ocpp = {};
-    //             msg.payload = {};
-    //             msg.payload.data = {};
-
-    //             msg.ocpp.ocppVersion = "1.6j";
-    //             msg.ocpp.chargeBoxIdentity = req.params.cbid;
-
-    //             // console.log('WebSocket to ocppj, ChargePointID =', req.params.cbid);
-    //             node.status({fill: "green", shape: "dot", text: `Connected on ${node.svcPath16j}/${req.params.cbid}`})                
-
-    //             let eventname = req.params.cbid + REQEVTPOSTFIX;
-    //             //console.log('Connecting to: ', req.params.cbid);
-    //             logData('info', `Websocket connecting to chargebox: ${req.params.cbid}`);
-
-
-    //             wsrequest = (data, cb) => {
-    //                 let err;
-    //                 let request = [];
-
-    //                 request[msgType] = CALL;
-    //                 request[msgId] = data.payload.MessageId||uuidv4();
-    //                 request[msgAction] = data.payload.command;
-    //                 request[msgCallPayload] = data.payload.data||{};
-
-    //                 logData('request', JSON.stringify(request).replace(/,/g,", "));                        
-
-    //                 ee.once(request[msgId], (retData) => {
-    //                     cb(err, retData);
-    //                 });
-
-    //                 ws.send(JSON.stringify(request));
-
-    //             }
-
-
-    //             ee.on(eventname, wsrequest);
-
-    //             ws.on('open', function() {
-    //                 //console.log('Opening a WS')
-    //             } );
-
-    //             ws.on('close', function(code, reason){
-    //                 //console.log(`closing emmiter: ${eventname}, Code: ${code}, Reason ${reason}`);
-
-    //                 ee.removeAllListeners(eventname);
-    //             });
-
-    //             ws.on('error', function(err){
-    //                 node.log("Websocket Error: " + err);
-    //                 //console.log("Websocket Error:",err);
-    //             });
-
-    //             ws.on('message', function(msgIn){
-
-
-    //                 let response = [];
-
-    //                 let id = uuidv4();
-
-    //                 let currTime = new Date().toISOString();
-
-    //                 let msgParsed;
-
-
-    //                 let eventName = ws.upgradeReq.params.cbid + REQEVTPOSTFIX;
-    //                 if (ee.eventNames().indexOf(eventName) == -1){
-    //                     // console.log( `Need to add event ${eventName}`);
-    //                     ee.on(eventname, wsrequest);
-    //                 }                    
-
-    //                 if (msgIn[0] != '['){
-    //                     msgParsed = JSON.parse( '[' + msgIn + ']');
-    //                 }
-    //                 else{
-    //                     msgParsed = JSON.parse( msgIn );
-    //                 }
-
-    //                 logData(msgTypeStr[msgParsed[msgType] - CALL], msgIn);
-
-    //                 if (msgParsed[msgType] == CALL){
-    //                     msg.msgId = id;
-    //                     msg.ocpp.MessageId = msgParsed[msgId];
-    //                     msg.ocpp.msgType = CALL;
-    //                     msg.ocpp.command =  msgParsed[msgAction];
-    //                     msg.payload.command = msgParsed[msgAction];
-    //                     msg.payload.data = msgParsed[msgCallPayload];
-
-
-    //                     let to = setTimeout( function(id){
-    //                         // node.log("kill:" + id);
-    //                         if (ee.listenerCount(id) > 0){
-    //                             let evList = ee.listeners(id);
-    //                             ee.removeListener(id,evList[0]);
-    //                         }
-    //                     }, 120 * 1000, id);
-
-    //                     // This makes the response async so that we pass the responsibility onto the response node
-    //                     ee.once(id, function(returnMsg){
-    //                         clearTimeout(to);
-    //                         response[msgType] = CALLRESULT;
-    //                         response[msgId] = msgParsed[msgId];
-    //                         response[msgResPayload] = returnMsg;                            
-
-    //                         logData(msgTypeStr[response[msgType] - CALL], JSON.stringify(response).replace(/,/g,", ") );
-
-    //                         ws.send(JSON.stringify(response));
-
-    //                     });
-
-    //                     node.send(msg);
-    //                 }
-    //                 else if (msgParsed[msgType] == CALLRESULT){
-    //                     msg.msgId = msgParsed[msgId];
-    //                     msg.ocpp.MessageId = msgParsed[msgId];
-    //                     msg.ocpp.msgType = CALLRESULT;
-    //                     msg.payload.data = msgParsed[msgResPayload];
-
-    //                     ee.emit(msg.msgId, msg);
-
-    //                 }
-
-    //             });
-    //         });
-    //     }
-
-    // });
