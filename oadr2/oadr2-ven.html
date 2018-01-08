@@ -22,7 +22,10 @@
             url: {value:"",validate:function(v) { return (v.trim().length === 0) || (v.indexOf("://") === -1) || (v.trim().indexOf("http") === 0)} },
             tls: {type:"tls-config",required: false},
             profile: { value: "2.0b", required: true},
-            pushport: { value: 80, required: false},
+            pushport: { value: 80, required: false, validate:function(v) { return (v.trim().length === 0) || (v.indexOf("://") === -1) || (v.trim().indexOf("http") === 0)} },
+            pushurl: {value: "", required: false},
+            venid: {value: "", required: false},
+            pollrate: {value: "5", required: false},
             log: { value: false, required: true },
             pathlog: {value: "", required: false}
         },
@@ -82,6 +85,14 @@
             <label for="node-input-pushport"><i class="fa fa-tag"></i> Push Port</label>
             <input type="text" id="node-input-pushport">
         </div>
+    <div class="form-row">
+        <label for="node-input-pushurl"><i class="fa fa-tag"></i> Push URL</label>
+        <input type="text" id="node-input-pushurl">
+    </div>
+    <div class="form-row">
+        <label for="node-input-venid"><i class="fa fa-tag"></i> VEN ID</label>
+        <input type="text" id="node-input-venid" placeholder="optional">
+    </div>
         
     <div class="form-row">
         <input type="checkbox" id="node-input-usetls" style="display: inline-block; width: auto; vertical-align: top;">
@@ -101,12 +112,16 @@
     <dl>
         <dt>Name:</dt>
         <dd>The name registered with the VTN as well as the the name shown on the workspace</dd>
-        <dt>URL:</dt>
+        <dt>VTN URL:</dt>
         <dd>The url of the VTN</dd>
         <dt>Profile</dt>
         <dd>The profile (2.0a or 2.0b) that this VEN is supporting</dd>        
         <dt>Push Port</dt>
-        <dd>The port used for VTN push messages</dd>        
+        <dd>The port used for VTN push messages</dd>
+        <dt>Push ULR</dt>
+        <dd>Default VEN URL (without the port number path). Used by CreatePartyRegistration (2.0b only) if set</dd>
+        <dt>VEN ID</dt>
+        <dd>Optional vendor ID. Useful for 2.0a VEN setups</dd>        
         <dt>Enable secure (SSL/TLS) connection</dt>
         <dd>Configure secure connections to the VTN</dd>        
     </dl>

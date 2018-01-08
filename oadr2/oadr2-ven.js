@@ -75,6 +75,7 @@ module.exports = function (RED) {
     const msg = {};
     msg.oadr = {};
     msg.payload = {};
+    msg.oadr.requestType = 'unknown';
     //msg.oadr.requestID = uuid||'unknown';
     let jsdata = xmlconvert.parse(body, { ignoreNameSpace: true });
     //console.log(jsdata);
@@ -165,8 +166,6 @@ module.exports = function (RED) {
     // const _url = `${url}/OpenADR2/Simple/2.0b/${ei}`;
     const _url = `${url}/OpenADR2/Simple/${url_profile}${ei}`;
     
-    // console.log(_url);
-    // console.log(xml);
 
     const options = {
       url: _url,
@@ -174,15 +173,11 @@ module.exports = function (RED) {
       headers: {
         "content-type": "application/xml",  // <--Very important!!!
       }
-      // pfx: fs.readFileSync(pfxFilePath),
-      // cert: fs.readFileSync(crtFilePath),
-      // key: fs.readFileSync(keyFilePath),
-      // ca: fs.readFileSync(caFilePath),
-      // "rejectUnauthorized" : false,
-      //body: xml
     };
 
     if (tlsNode) {
+      //console.log("Adding TLS options");
+      //
       tlsNode.addTLSOptions(options);
     }
 
@@ -207,6 +202,13 @@ module.exports = function (RED) {
     oadrProfile = config.profile||'2.0b';
 
     this.pushPort = config.pushport;
+    this.venID = config.venid||'';
+
+    this.transportAddress = '';
+    if (config.pushurl){
+      let port = node.pushPort||'8181';
+      this.transportAddress = `${config.pushurl}:${port}`;
+    }
 
     const flowContext = this.context().global;
 
@@ -231,30 +233,26 @@ module.exports = function (RED) {
 
     // app.post(`/OpenADR2/Simple/${url_profile}:reqType`,(req, res) => {
     app.post(inUrl,(req, res) => {
+      // console.log('got a post');
       // console.log('req URL:', req.url);
       // console.log('req hostname:', req.hostname);
       // console.log('req IP:', req.ip);
       // console.log('req params: ', req.params)
       // console.log('req body:', req.body);
       // console.log('Made it to the inbound server')
+
       let msg = prepareReqMsg(req.body);
 
-      let oadrObj = msg.payload.data[msg.oadr.requestType];
-      //console.log(JSON.stringify(oadrObj));
-      // let ids = flowContext.get(`${node.name}:IDS`);
-      //console.log(`${node.name}:IDS`,ids);
-      //console.log(node.name);
-      if (oadrObj.hasOwnProperty('venID')){
-        //console.log(oadrObj.venID);
-        //_ids.venID = oadrObj.venID;
+      let oadrObj = {};
+      
+      if (msg.oadr.hasOwnProperty('requestType') && msg.oadr.requestType !== 'unknown') {
+        oadrObj = msg.payload.data[msg.oadr.requestType];
+      }else {
+        return;
+      }
 
-        // ids.venID = oadrObj.venID;
-        // flowContext.set(`${node.name}:IDs`, ids );
-        //ids.venID = oadrObj.registrationID;
+      if (oadrObj.hasOwnProperty('venID')){
       } 
-      // if (oadrObj.hasOwnProperty('venID')) ids.venID = oadrObj.venID;
-      // if (oadrObj.hasOwnProperty('vtnID')) ids.vtnID = oadrObj.vtnID;
-      // flowContext.set(`${node.name}:IDs`, ids);
 
       let id = msg.oadr.requestID||0;
 
@@ -263,7 +261,6 @@ module.exports = function (RED) {
       }
       else {
         let to = setTimeout(function (id) {
-          // node.log("kill:" + id);
           if (ee.listenerCount(id) > 0) {
             let evList = ee.listeners(id);
             ee.removeListener(id, evList[0]);
@@ -286,7 +283,7 @@ module.exports = function (RED) {
 
     });
 
-    const server = app.listen(node.pushPort, () => {/* console.log(`listenting on port ${node.pushPort}`)*/ });
+    const server = app.listen(node.pushPort, () => {console.log(`listening on port ${node.pushPort}`)});
 
     // make local copies of our configuration
     this.logging = (typeof config.log === 'boolean')? config.log : false;
@@ -294,13 +291,13 @@ module.exports = function (RED) {
     this.pathlog = config.pathlog;
     this.name = config.name || "OADR2 VEN";
 
-    node.status({ fill: "green", shape: "ring", text: 'blah' })
+    node.status({ fill: "green", shape: "ring", text: oadrProfile })
 
     // Initialize the ids for this VEN
     flowContext.set(`${node.name}:IDs`, 
       { 
           registrationID : '', 
-          venID: '', 
+          venID: node.venID||'', 
           vtnID: ''
       });
 
@@ -325,7 +322,7 @@ module.exports = function (RED) {
 
       let oadrQueryRegistration = {
         _attr: payloadAttr,
-        'pyld:requestID': params.requestID||uuidv4()        
+        'pyld:requestID': uuid
       };
 
       let myXML = getXMLpayload('oadrQueryRegistration', oadrQueryRegistration);
@@ -342,7 +339,7 @@ module.exports = function (RED) {
             if (oadrObj.eiResponse.responseCode === 200){
               let ids = {
                 registrationID:  oadrObj.registrationID||'',
-                venID: oadrObj.venID||'',
+                venID: oadrObj.venID||node.venID||'',
                 vtnID: oadrObj.vtnID||''
               }
               _ids.registrationID = ids.registrationID;
@@ -372,15 +369,15 @@ module.exports = function (RED) {
       let oadrCreatePartyRegistration = {
         _attr: payloadAttr,
         'pyld:requestID': {
-          _value: params.requestID||uuidv4()
+          _value: uuid
         },
         oadrProfileName: params.oadrProfileName||oadrProfile||"2.0b",
         oadrTransportName: "simpleHttp",
-        oadrReportONly: (typeof params.oadrReportOnly === 'boolean')? params.oadrReportOnly : false,
+        oadrReportOnly: (typeof params.oadrReportOnly === 'boolean')? params.oadrReportOnly : false,
         oadrXmlSignature: false,
         oadrVenName: node.name,
         oadrHttpPullModel: (typeof params.oadrHttpPullModel === 'boolean')? params.oadrHttpPullModel : true,
-        oadrTransportAddress: params.oadrTransportAddress||null
+        oadrTransportAddress: params.oadrTransportAddress||node.transportAddress||null
       }
 
       let myXML = getXMLpayload('oadrCreatePartyRegistration', oadrCreatePartyRegistration);
@@ -432,7 +429,7 @@ module.exports = function (RED) {
 
       let oadrCancelPartyRegistration = {
         _attr: payloadAttr,
-        'pyld:requestID': params.requestID||uuidv4(),
+        'pyld:requestID': uuid,
         'ei:registrationID': params.registrationID||_ids.registrationID||ids.registrationID||'',
         'ei:venID': params.venID||ids.venID||''  
       }
@@ -477,13 +474,13 @@ module.exports = function (RED) {
       
       let ids = flowContext.get(`${node.name}:IDs`);
       
-      let venID = '';
+      let venID = params.venID||'';
       if (ids) { venID = ids.venID };
 
       let oadrRequestEvent = {
         _attr: payloadAttr,
         'pyld:eiRequestEvent': {
-          'pyld:requestID': params.requestID||uuidv4(),
+          'pyld:requestID': uuid,
           'ei:venID' : params.venID||_ids.venID||venID,
         } 
       };
@@ -568,6 +565,134 @@ module.exports = function (RED) {
               
     }
 
+    const RegisterReport = function(msg) {
+      
+      let params = msg.payload;
+      let inCmd = msg.payload.requestType||'unknown';
+      let uuid = params.requestID||uuidv4();
+
+      let ids = flowContext.get(`${node.name}:IDs`);
+      
+      let venID = params.venID||'';
+      if (ids) { venID = ids.venID };
+      
+      let oadrRegisterReport = {
+        _attr: payloadAttr,
+        'pyld:requestID': {
+          _value: uuid
+        },
+        oadrReport: {
+          duration : {
+            _attr: { xmlns : "urn:ietf:params:xml:ns:icalendar-2.0" },
+            duration: params.duration
+          },
+          oadrReportDescription : {
+            'ei:rID': params.rID||'',
+            'ei:reportDataSource': {
+              'ei:resourceID': params.resourceID||''
+            },
+            'ei:reportType': params.reportType||'',
+            'ei:readingType': params.readingType||'x-notApplicable',
+            marketContext: {
+              _attr: { xmlns:"http://docs.oasis-open.org/ns/emix/2011/06"},
+              _value: params.marketContext
+            },
+            oadrSamplingRate : {
+              oadrMinPeriod: params.oadrMinPeriod||'PT1M',
+              oadrMaxPeriod: params.oadrMaxPeriod||'PT1M',
+              oadrOnChange: params.oadrOnChange||'false'
+            }
+          },
+          'ei:reportRequestID': params.reportRequestID||0,
+          'ei:reportSpecifierID': params.reportSpecifierID||uuidv4(),
+          'ei:reportName': params.reportName||'',
+          'ei:createdDateTime': params.createdDateTime
+        },
+        'ei:venID' : params.venID||_ids.venID||venID,
+
+
+      }
+
+      let myXML = getXMLpayload('oadrRegisterReport', oadrRegisterReport);
+
+      // console.log(myXML);
+
+      sendRequest(node.url,'EiReport', myXML, function(err, response, body){
+        if(err){
+          console.log('Error:', err);
+        }    
+        else {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
+        }
+      });
+            
+    }    
+    
+    const RegisteredReport = function(msg) {
+      
+      let params = msg.payload;
+      let inCmd = msg.payload.requestType||'unknown';
+      let uuid = params.requestID;
+
+      let ids = flowContext.get(`${node.name}:IDs`);
+      
+      let venID = params.venID||'';
+      if (ids) { venID = ids.venID };
+      
+      let oadrRegisteredReport = {
+        _attr: payloadAttr,
+        'ei:eiResponse': {
+          responseCode: params.responseCode||200,
+          responseDescription: params.responseDescription||'OK',
+          'pyld:requestID': params.requestID
+        },
+        'ei:venID' : params.venID||_ids.venID||venID
+
+      }
+
+      let myXML = getXMLpayload('oadrRegisteredReport', oadrRegisteredReport);
+
+      sendRequest(node.url,'EiReport', myXML, function(err, response, body){
+        if(err){
+          console.log('Error:', err);
+        }    
+        else {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
+        }
+      });
+            
+    }    
+
+    const UpdateReport = function(msg) {
+      
+      let params = msg.payload;
+      let inCmd = msg.payload.requestType||'unknown';
+      let uuid = params.requestID||uuidv4();
+      
+      let oadrUpdateReport = {
+        _attr: payloadAttr,
+        'pyld:requestID': {
+          _value: uuid
+        },
+
+      }
+
+      let myXML = getXMLpayload('oadrUpdateReport', oadrUpdateReport);
+
+      sendRequest(node.url,'EiReport', myXML, function(err, response, body){
+        if(err){
+          console.log('Error:', err);
+        }    
+        else {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
+        }
+      });
+            
+    }    
+    
     const Poll = function(msg) {
 
       let params = msg.payload;
@@ -604,7 +729,7 @@ module.exports = function (RED) {
 
       let oadrResponse = {
         _attr: payloadAttr,
-        eiResponse: {
+        'ei:eiResponse': {
           responseCode: params.responseCode||200,
           responseDescription: params.responseDescription||'OK',
           'pyld:requestID': params.requestID
@@ -629,42 +754,65 @@ module.exports = function (RED) {
       let optID = params.optID||uuidv4();
       let date1 = new Date().toISOString()
       
+      // console.log(JSON.stringify(params));
 
       let oadrCreateOpt = {
         _attr: payloadAttr,
-        'ei:createdDateTime': date1,
-        'pyld:requestID': {
-          _value: params.requestID||uuidv4()
-        },
-
         'ei:optID' : optID,
         'ei:optType': params.optType||'optOut',
         'ei:optReason': params.optReason||'notParticipating',
         marketContext: {
-          _attr: {
-            xmlns: "http://docs.oasis-open.org/ns/emix/2011/06" 
-          }
         },
         'ei:venID': _ids.venID,
         vavailability : {
           _attr: {
             xmlns: "urn:ietf:params:xml:ns:icalendar-2.0"
+          }
+        },
+        'ei:createdDateTime': date1,
+        'pyld:requestID': {
+          _value: uuid
+        }                 
+      };
+
+      if (params.hasOwnProperty('marketContext')){
+        oadrCreateOpt.marketContext = {
+          _attr: {
+            xmlns: "http://docs.oasis-open.org/ns/emix/2011/06"
           },
-          components: {
-            available: {
-              properties: {
-                dtstart: {
-                  'date-time': params.dtstart|| date1,
-                },
-                duration: {
-                  duration: params.duration||'PT1H'
-                }
+          _value: params.marketContext
+        }
+      }
+
+      oadrCreateOpt['ei:eiTarget'] = {};
+      
+      if(params.hasOwnProperty('resourceID')){
+        oadrCreateOpt['ei:eiTarget'] = {
+          'ei:resourceID': params.resourceID
+        }
+      }
+
+      if (params.hasOwnProperty('components') && typeof params.components === 'object' && params.components.length > 0){
+        oadrCreateOpt.vavailability.components ={
+          available: params.components
+        };
+      }
+      else {
+        // Adding a single basic Opt event
+        oadrCreateOpt.vavailability.components = {
+          available: {
+            properties: {
+              dtstart: {
+                'date-time': params.dtstart|| params['date-time'] || date1,
+              },
+              duration: {
+                duration: params.duration||'PT1H'
               }
             }
           }
-        } 
-        
-      };
+        }
+  
+      }
 
       let myXML = getXMLpayload('oadrCreateOpt', oadrCreateOpt);
 
@@ -690,7 +838,7 @@ module.exports = function (RED) {
       let oadrCancelOpt = {
         _attr: payloadAttr,
         'pyld:requestID': {
-          _value: params.requestID||uuidv4()
+          _value: uuid
         },
         'ei:optID' : optID,
         'ei:venID': _ids.venID
@@ -734,6 +882,14 @@ module.exports = function (RED) {
               break;
             case('RequestEvent'):
               RequestEvent(msg);
+              break;
+            case('RegisterReport'):
+              RegisterReport(msg);
+              break;
+            case('RegisteredReport'):
+              RegisteredReport(msg);
+              break;
+            case('UpdateReport'):
               break;
             case('Poll'):
               Poll(msg);
