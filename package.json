@@ -1,13 +1,13 @@
 {
-  "name": "oadr2_ven",
-  "version": "0.1.0",
+  "name": "node-red-contrib-oadr2_ven",
+  "version": "1.0.5",
   "description": "Open ADR 2.0b VEN",
-  "main": "index.js",
+  "main": "oadr2/oadr2-ven.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "mon": "nodemon -x node-red"
   },
-  "author": "Bryan Nystrom <bnystrom@natara.com> (https://github.com/bnystrom)",
+  "author": "Bryan Nystrom <bnystrom@gmail.com> (https://github.com/bnystrom)",
   "license": "MIT",
   "engines": {
     "node": ">=6.5.0"
