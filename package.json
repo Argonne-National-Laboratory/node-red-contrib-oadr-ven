@@ -7,12 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "mon": "nodemon -x node-red"
   },
-  "author": "Bryan Nystrom <bnystrom@chicagoit.com> (http://chicagoit.com)",
+  "author": "Bryan Nystrom <bnystrom@natara.com> (https://github.com/bnystrom)",
   "license": "MIT",
   "engines": {
     "node": ">=6.5.0"
   },
   "keywords": [
+    "node-red",
     "ocpp"
   ],
   "node-red": {
