@@ -105,6 +105,10 @@ module.exports = function (RED) {
     return cmd;
   };
 
+
+  //
+  // Takes an ical duration in a outputs it as a total # of seconds
+  //  
   function iCalDurationInSeconds(durStr){
     var exp = new RegExp(/^P/);
     let totalSec = 0;
@@ -221,7 +225,7 @@ module.exports = function (RED) {
 
 
     app.get('/', function( req, res ) {
-      console.log('got something:', req);
+      // console.log('got something:', req);
     });
 
     app.use(bodyparser.text({type: 'application/xml'}));
@@ -283,7 +287,7 @@ module.exports = function (RED) {
 
     });
 
-    const server = app.listen(node.pushPort, () => {console.log(`listening on port ${node.pushPort}`)});
+    const server = app.listen(node.pushPort, () => {/* console.log(`listening on port ${node.pushPort}`)}*/);
 
     // make local copies of our configuration
     this.logging = (typeof config.log === 'boolean')? config.log : false;
@@ -329,7 +333,8 @@ module.exports = function (RED) {
 
       sendRequest(node.url,'EiRegisterParty', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.err('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -384,7 +389,8 @@ module.exports = function (RED) {
 
       sendRequest(node.url,'EiRegisterParty', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.error('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -438,7 +444,8 @@ module.exports = function (RED) {
       
       sendRequest(node.url,'EiRegisterParty', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.err('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -489,7 +496,8 @@ module.exports = function (RED) {
       
       sendRequest(node.url,'EiEvent', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // ('Error:', err);
+          node.error('Error: ' + err);
         }    
         else {
           //console.log(body);
@@ -555,7 +563,8 @@ module.exports = function (RED) {
 
       sendRequest(node.url,'EiEvent', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.error('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -619,7 +628,8 @@ module.exports = function (RED) {
 
       sendRequest(node.url,'EiReport', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.error('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -655,7 +665,8 @@ module.exports = function (RED) {
 
       sendRequest(node.url,'EiReport', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.error('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -683,7 +694,8 @@ module.exports = function (RED) {
 
       sendRequest(node.url,'EiReport', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.error('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -713,7 +725,8 @@ module.exports = function (RED) {
       
       sendRequest(node.url,'OadrPoll', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.error('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -818,7 +831,8 @@ module.exports = function (RED) {
 
       sendRequest(node.url,'EiOpt', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.error('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -848,7 +862,8 @@ module.exports = function (RED) {
 
       sendRequest(node.url,'EiOpt', myXML, function(err, response, body){
         if(err){
-          console.log('Error:', err);
+          // console.log('Error:', err);
+          node.error('Error: ' + err);
         }    
         else {
           let msg = prepareResMsg(uuid, inCmd, body);
@@ -939,7 +954,8 @@ module.exports = function (RED) {
         let date = new Date().toLocaleString();
         // create the logged info from a template
         // let logInfo = `${date} \t node: ${node.name} \t type: ${type} \t data: ${data} ${os.EOL}`;
-        let logInfo = `${date} \t node: ${node.name} \t type: ${type} \t data: ${data.replace(/[\n\r]/g, "")} ${os.EOL}`;
+        let xdata = data||'';
+        let logInfo = `${date} \t node: ${node.name} \t type: ${type} \t data: ${xdata.replace(/[\n\r]/g, "")} ${os.EOL}`;
 
 
         // create/append the log info to the file

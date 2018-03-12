@@ -27,6 +27,17 @@ Most of the commands let you define the `requestID` of the command in case you n
 For 2.0b setups, the OADR2 VEN node also attempts to track the `venID` for you upon receiving it from a `CreatePartyRegistration` call. There is also a configuration parameter for the node which allows you to "hard set" the venID. This is necessary for 2.0a setups, but if set will override the node's saved venID. Optionally, you can pass in the `venID` as a parameter with the commands.
 
 OADR2_VEN support the following commands:
+* [QueryRegistration](#queryregistration)
+* [CreatePartyRegistration](createpartyregistration)
+* [CancelPartyRegistration](#cancelpartyregistration)
+* [RequestEvent](*requestevent)
+* [CreatedEvent](*createdevent)
+* [RegisterReport](*registerreport)
+* [RegisteredReport](*registeredreport)
+* [Poll](*poll)
+* [Response](*response)
+* [CreateOpt](*createopt)
+* [CancelOpt](*cancelopt)
 
 ### `QueryRegistration`
 * `requestID`
