@@ -1,4 +1,5 @@
-# Open ADR2 VEN for Node-Red
+# node-red-contrib-oadr-ven
+## Open ADR VEN for Node-Red
 
 Node Red node that allows users to easily implement a VEN (Virtual End Node) by making communication between it and a VTN (Virtaul Top Node) easier. Users only need to deal with json since the node handles converting incoming and outgoing XML messages for them. It also support communication over a secured TCP connection to the VTN.
 
