@@ -287,7 +287,8 @@ module.exports = function (RED) {
 
     });
 
-    const server = app.listen(node.pushPort, () => {/* console.log(`listening on port ${node.pushPort}`)}*/);
+    const server = app.listen(node.pushPort, () => {  //console.log(`listening on port ${node.pushPort}`) 
+    });
 
     // make local copies of our configuration
     this.logging = (typeof config.log === 'boolean')? config.log : false;
