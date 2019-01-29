@@ -1,6 +1,6 @@
 {
   "name": "@anl-ioc/node-red-contrib-oadr-ven",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Open ADR 2.0b VEN",
   "main": "oadr2/oadr2-ven.js",
   "scripts": {
