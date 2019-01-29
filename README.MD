@@ -1,6 +1,6 @@
 # node-red-contrib-oadr-ven
 
-[![NPM](https://nodei.co/npm/node-red-contrib-openadr-ven.png)](https://nodei.co/npm/node-red-contrib-openadr-ven/)
+[![NPM](https://nodei.co/npm/@anl-ioc/node-red-contrib-oadr-ven.png)](https://nodei.co/npm/@anl-ioc/node-red-contrib-oadr-ven/)
 
 ## Open ADR VEN for Node-Red
 
