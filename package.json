@@ -1,6 +1,6 @@
 {
   "name": "@anl-ioc/node-red-contrib-oadr-ven",
-  "version": "1.0.6",
+  "version": "1.0.5",
   "description": "Open ADR 2.0b VEN",
   "main": "oadr2/oadr2-ven.js",
   "scripts": {
@@ -9,6 +9,9 @@
   },
   "author": "Bryan Nystrom <bnystrom@gmail.com> (https://github.com/bnystrom)",
   "license": "BSD-3-Clause",
+  "publishConfig": {
+    "access": "public"
+  },
   "bugs": {
     "url": "https://github.com/Argonne-National-Laboratory/node-red-contrib-oadr-ven/issues"
   },
