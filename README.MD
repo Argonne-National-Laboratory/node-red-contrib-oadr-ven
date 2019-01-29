@@ -1,29 +1,34 @@
 # node-red-contrib-oadr-ven
+
+[![NPM](https://nodei.co/npm/node-red-contrib-openadr-ven.png)](https://nodei.co/npm/node-red-contrib-openadr-ven/)
+
 ## Open ADR VEN for Node-Red
 
-Node Red node that allows users to easily implement a VEN (Virtual End Node) by making communication between it and a VTN (Virtaul Top Node) easier. Users only need to deal with json since the node handles converting incoming and outgoing XML messages for them. It also support communication over a secured TCP connection to the VTN.
+A [Node-Red][4] node that allows users to easily implement an Open OpenADR ( **Open** **A**utomated **D**emand **R**esponse) VEN (**V**irtual **E**nd **N**ode) by making communication between it and a VTN (**V**irtual **T**op **N**ode) easier. Users only need to deal with json since the node handles converting incoming and outgoing XML messages for them. It also support communication over a secured TCP connection to the VTN.
+
+For more information about OpenADR, please visit the [OpenADR Alliance website][3].
 
 ## Implementation
 
-The node-red OADR2 VEN implementation only supports the simpleHttp transport protocol. XMPP is not supported at this time. It also only support standar security and does not at this time support XML Signatures. 
+The [Node-Red][4] OADR2 VEN implementation only supports the simpleHttp transport protocol. XMPP is not supported at this time. It also only supports standard security and does not at this time support XML Signatures. 
 
-This implementation attempts to allow users to create OADR 2.0a or 2.0b compatible VEN implementations. Support for ealier OADR releases, or the upcoming 2.0c and future profiles is not supported.
+This implementation attempts to allow users to create OADR 2.0a or 2.0b compatible VEN implementations. Support for earlier OADR releases, or the upcoming 2.0c and future profiles is not supported.
 
-All auto/default Ids (unique ids/ request ids) are generated as V4 UUIDs. Users can override this and provide their own unique ids and pass them to the commands.
+All auto/default Ids (unique ids/ request ids) are generated as [V4 UUIDs][6]. Users can override this and provide their own unique ids and pass them to the commands.
 
-In cases where a command being returned from the VTN has data that can have one or more items (an array), please keep the following in mind: The node attempts to convert incoming XML data structures into json objects. The logic behind this has no way of knowing when an XML path that supports multiple items but is only returning a single item is an array of one item. Therefore the conversion for a single item behaves as if it is not an array. When multiple items are returned however, the items are put into an array.
+In cases where a command being returned from the VTN has data that can have one or more items (an array), please keep the following in mind: The node attempts to convert incoming XML data structures into json objects. The logic behind this has no way of knowing when an XML path that supports multiple items but is only returning a single item is an array of one item. Therefore the conversion for a single item behaves as if it is not an array. When multiple items are returned however, the items are put into an array. You should always check if an item is an array or not.
 
 ## Assumptions
 
-It is not the intention of this document to explain the workings or specification of OADR and its commands. Please refer to the OpenADR profile specification documents provided by the OpenADR Alliance for details about call parameter requirements and sequences.
+It is not the intention of this document to explain the workings or specification of OADR and its commands. Please refer to the OpenADR profile specification documents provided by the [OpenADR Alliance][3] for details about call parameter requirements and sequences.
 
 ## Supported Commands
 
-All commands are sent to the OADR2 VEN node via the msg.payload. This is done in order to support simply using an inject node for simple commands. Many of the commands support default and optional parameters. 
+All commands are sent to the OADR2 VEN node via *`msg.payload`*. This is done in order to support simply using an inject node for simple commands. Many of the commands support default and optional parameters. 
 
 All payloads MUST contain a `requestType` parameter. This is set to the actual oadr command listed below. For simplicity, the commands are given without their *'oadr'* prefix. For example, to make a 2.0b specification call `oadrQueryRegistraion`, set `msg.payload.requestType = 'QueryRegistration'`.
 
-Most of the commands let you define the `requestID` of the command in case you need to track the responses or later requests from the VTN. However, if no `requestID` is submitted with the payload, one will be auto-generated for you. Keep in mind, some commands require you to explicetly return the `requestID` received from another command, for example in the `RegisteredReport` or `CreatedEvent`. Also, some commands have arrays of parameters which may require additional ids.
+Most of the commands let you define the `requestID` of the command in case you need to track the responses or later requests from the VTN. However, if no `requestID` is submitted with the payload, one will be auto-generated for you. Keep in mind, some commands require you to explicitly return the `requestID` received from another command, for example in the `RegisteredReport` or `CreatedEvent`. Also, some commands have arrays of parameters which may require additional ids.
 
 For 2.0b setups, the OADR2 VEN node also attempts to track the `venID` for you upon receiving it from a `CreatePartyRegistration` call. There is also a configuration parameter for the node which allows you to "hard set" the venID. This is necessary for 2.0a setups, but if set will override the node's saved venID. Optionally, you can pass in the `venID` as a parameter with the commands.
 
@@ -39,6 +44,7 @@ OADR2_VEN support the following commands:
 * [Response](*response)
 * [CreateOpt](*createopt)
 * [CancelOpt](*cancelopt)
+* [UpdateReport](*updatereport)
 
 ### `QueryRegistration`
 * `requestID`
@@ -260,6 +266,12 @@ return msg;
 * `venID`
 
 ---
+
+### `UpdateReport`
+*NOTE: Not yet fully supported*
+
+---
+
 ## Message output from the OADR2 VEN node
 
 There are two types of messages sent out from the VEN node.
@@ -274,7 +286,26 @@ Messages output from the OADR2 VEN generally contain two structures in the messa
 1. `msg.oadr` (which contains...)
     * `requestID`: *(the request id associated with the output message)*
     * `requestType`: *(the request command type, for example CreatePartyRegistrtaion)* 
-    * `ResponseType`: *(the returned command type, for exampled oadrCreatedPartyREgistration)*
+    * `ResponseType`: *(the returned command type, for example oadrCreatedPartyREgistration)*
     * `pollFreqSeconds`: *(calculated oadrRequestedOadrPollFreq in seconds. Only returned in oadrCreatedPartyRegistration commands)*
 1. `msg.payload.data`
-    * this structure conatins command specific data in json format returned from the VTN. Refer to the OADR 2.0a/b Profile Specifications for parameter details.
+    * this structure contains command specific data in json format returned from the VTN. Refer to the OADR 2.0a/b Profile Specifications for parameter details.
+
+## Provided Examples
+
+The package provides a basic example to get you going. In the node-red-contrib-openadr-ven folder is a subfolder named *example-flows*. The example provides a working flow along with a simple UI page on the "OADR Dash" tab. This is by no means a fully functional VEN setup but it should help illustrate how to use the node.
+
+ ![example flow](./images/example_flow.png)
+
+
+# Authors
+
+[Bryan Nystrom][11]
+
+[Argonne National Laboratory][10]
+
+[3]:https://www.openadr.org/
+[4]:http://nodered.org
+[6]:https://en.wikipedia.org/wiki/Universally_unique_identifier#Version_4_(random)
+[10]:https://www.anl.gov
+[11]:https://github.com/bnystrom

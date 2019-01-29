@@ -14,12 +14,13 @@
   },
   "homepage": "https://github.com/Argonne-National-Laboratory/node-red-contrib-oadr-ven#readme",
   "engines": {
-    "node": ">=6.5.0"
+    "node": ">=8.5.0"
   },
   "keywords": [
     "node-red",
     "OpenADR",
-    "OADR VEN "
+    "VEN",
+    "OADR VEN"
   ],
   "node-red": {
     "nodes": {
@@ -27,13 +28,18 @@
     }
   },
   "dependencies": {
-    "body-parser": "^1.18.2",
-    "data2xml": "^1.2.5",
-    "express": "^4.16.2",
-    "fast-xml-parser": "*",
-    "request": "^2.87.0",
-    "uuid": "^3.1.0",
-    "xml-js": "^1.5.2",
-    "xmlbuilder": "^9.0.4"
+    "body-parser": "^1.18.3",
+    "data2xml": "^1.3.1",
+    "debug": "^4.1.1",
+    "express": "^4.16.4",
+    "fast-xml-parser": "^3.12.12",
+    "request": "^2.88.0",
+    "uuid": "^3.3.2",
+    "xml-js": "^1.6.9"
+  },
+  "devDependencies": {
+    "eslint": "^5.12.1",
+    "eslint-config-strongloop": "^2.1.0",
+    "eslint-plugin-node": "^8.0.1"
   }
 }

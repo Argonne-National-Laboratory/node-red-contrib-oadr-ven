@@ -1,10 +1,16 @@
 {
-    "parser": "esprima",
-    "rules": {
-        "no-console": "off"
+    "extends": [
+        "strongloop"
+    ],
+    "env": {
+        "es6": true,
+        "node": true
     },
-    "env":{
-        "node": true,
-        "es6": true
+    "rules": {
+        "max-len":"off",
+        "spaced-comment":"off",
+        "eqeqeq": "off"
     }
-}
+    
+    
+}   
