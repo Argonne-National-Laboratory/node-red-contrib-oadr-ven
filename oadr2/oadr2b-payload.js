@@ -59,7 +59,7 @@ oadr2b_model.queryRegistration = function(payload, xmlSignature) {
 }
 
 oadr2b_model.requestEvent = function(payload, xmlSignature) {
-	return transform("oadrQueryRegistration", payload, xmlSignature);
+	return transform("oadrRequestEvent", payload, xmlSignature);
 }
 
 oadr2b_model.registeredReport = function(payload, xmlSignature) {

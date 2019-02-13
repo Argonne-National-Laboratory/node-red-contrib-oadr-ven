@@ -96,7 +96,7 @@ module.exports = function(RED) {
     msg.payload = {};
     msg.oadr.requestType = 'unknown';
     //msg.oadr.requestID = uuid||'unknown';
-    console.log(body)
+    // console.log(body)
     let parsed = oadr2b_model.parse(body);
     let jsdata = parsed.value;
     //console.log(jsdata);
@@ -215,7 +215,16 @@ module.exports = function(RED) {
 
     options.body = xml;
 
-    request(options, cb);
+
+    request(options, function(error, response, body){
+      if(response.statusCode != 200) {
+        console.log("Error:")
+        console.log(response);
+      }
+      else {
+        cb(error, response, body)
+      }
+    });
   }
 
   /*
@@ -288,8 +297,6 @@ module.exports = function(RED) {
       // console.log('Made it to the inbound server')
       
       let msg = prepareReqMsg(req.rawBody);
-      console.log("Received payload:")
-      console.log(msg)
       let oadrObj = {};
 
       if (
@@ -328,9 +335,7 @@ module.exports = function(RED) {
         });
       }
 
-      console.log("Send payload")
       node.send(msg);
-      console.log(msg);
     });
 
     const server = app.listen(node.pushPort, () => {
@@ -366,6 +371,7 @@ module.exports = function(RED) {
     }
 
     const QueryRegistration = function(msg) {
+
       let params = msg.payload;
       let inCmd = msg.payload.requestType || 'unknown';
       let uuid = params.requestID || uuidv4();
@@ -379,10 +385,8 @@ module.exports = function(RED) {
       ) {
         if (err) {
           console.log('Error:', err);
-          // node.err('Error: ' + err);
         } else {
           let msg = prepareResMsg(uuid, inCmd, body);
-          
 
           if (msg.oadr.responseType == 'oadrCreatedPartyRegistration') {
             let oadrObj = msg.payload.data[msg.oadr.responseType];
@@ -419,7 +423,7 @@ module.exports = function(RED) {
       let inCmd = msg.payload.requestType || 'unknown';
       let uuid = params.requestID || uuidv4();
 
-      let myXML = oadr2b_model.createPartyRegistration({
+      let oadrPartyRegistration = {
         requestID: uuid,
         venID: node.venID,
         oadrProfileName: params.oadrProfileName || oadrProfile || '2.0b',
@@ -436,7 +440,8 @@ module.exports = function(RED) {
             : true,
         oadrTransportAddress:
           params.oadrTransportAddress || node.transportAddress || null
-      }, xmlSignature);
+      }
+      let myXML = oadr2b_model.createPartyRegistration(oadrPartyRegistration, xmlSignature);
 
       
       sendRequest(node.url, 'EiRegisterParty', myXML, function(
@@ -488,7 +493,7 @@ module.exports = function(RED) {
       let uuid = params.requestID || uuidv4();
 
       let ids = flowContext.get(`${node.name}:IDs`);
-      console.log(ids);
+
       let registrationID = ids.registrationID;
       let myXML = oadr2b_model.cancelPartyRegistration({
         requestID: uuid,
@@ -675,9 +680,9 @@ module.exports = function(RED) {
         oadrRegisterReport = params.oadrRegisterReport;
       }
       try {
-        console.log(oadrRegisterReport)
+        // console.log(oadrRegisterReport)
         let myXML = oadr2b_model.registerReport(oadrRegisterReport, xmlSignature)
-        console.log(myXML)
+        // console.log(myXML)
         sendRequest(node.url, 'EiReport', myXML, function(err, response, body) {
           if (err) {
             // console.log('Error:', err);
@@ -859,7 +864,7 @@ module.exports = function(RED) {
 
       // let myXML = getXMLpayload('oadrCreateOpt', oadrCreateOpt);
 
-      let myXML = oadr2b_model.createopt(oadrCreateOpt, xmlSignature);
+      let myXML = oadr2b_model.createOpt(oadrCreateOpt, xmlSignature);
       sendRequest(node.url, 'EiOpt', myXML, function(err, response, body) {
         if (err) {
           // console.log('Error:', err);
@@ -898,6 +903,7 @@ module.exports = function(RED) {
     };
 
     this.on('input', function(msg) {
+      console.log(msg)
       let opType = 'request';
 
       if (msg.payload) {
