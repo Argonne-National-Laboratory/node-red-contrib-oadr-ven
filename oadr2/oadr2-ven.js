@@ -33,6 +33,7 @@ const EventEmitter = events.EventEmitter;
 let tlsNode;
 let oadrProfile;
 let xmlSignature;
+let xmlSignatureKey;
 
 let ee;
 
@@ -219,7 +220,7 @@ module.exports = function(RED) {
     request(options, function(error, response, body){
       if(response.statusCode != 200) {
         console.log("Error:")
-        console.log(response);
+        console.log(body);
       }
       else {
         cb(error, response, body)
@@ -236,6 +237,7 @@ module.exports = function(RED) {
 
     if (config.tls) {
       tlsNode = RED.nodes.getNode(config.tls);
+      xmlSignatureKey = tlsNode;
     }
 
     oadrProfile = config.profile || '2.0b';
@@ -356,19 +358,7 @@ module.exports = function(RED) {
       vtnID: '',
     });
 
-    const payloadAttr = {
-      //'ei:schemaVersion': `${oadrProfile}`,
-      'xmlns:ei': 'http://docs.oasis-open.org/ns/energyinterop/201110',
-      'xmlns:pyld':
-        'http://docs.oasis-open.org/ns/energyinterop/201110/payloads',
-    };
-    if (oadrProfile !== '2.0a') {
-      payloadAttr['ei:schemaVersion'] = oadrProfile;
-    } else {
-      payloadAttr.xmlns = `http://openadr.org/oadr-${oadrProfile}/2012/07`;
-      payloadAttr['xmlns:xsi'] = 'http://www.w3.org/2001/XMLSchema-instance';
-      payloadAttr['xmlns:xsd'] = 'http://www.w3.org/2001/XMLSchema';
-    }
+ 
 
     const QueryRegistration = function(msg) {
 
@@ -376,7 +366,7 @@ module.exports = function(RED) {
       let inCmd = msg.payload.requestType || 'unknown';
       let uuid = params.requestID || uuidv4();
 
-      let myXML = oadr2b_model.queryRegistration({requestID: uuid, venID: node.venID}, xmlSignature);
+      let myXML = oadr2b_model.queryRegistration({requestID: uuid, venID: node.venID}, xmlSignature, xmlSignatureKey);
 
       sendRequest(node.url, 'EiRegisterParty', myXML, function(
         err,
@@ -423,6 +413,11 @@ module.exports = function(RED) {
       let inCmd = msg.payload.requestType || 'unknown';
       let uuid = params.requestID || uuidv4();
 
+      if(params.xmlSignature) {
+        xmlSignature = params.xmlSignature
+      }
+      
+
       let oadrPartyRegistration = {
         requestID: uuid,
         venID: node.venID,
@@ -441,7 +436,7 @@ module.exports = function(RED) {
         oadrTransportAddress:
           params.oadrTransportAddress || node.transportAddress || null
       }
-      let myXML = oadr2b_model.createPartyRegistration(oadrPartyRegistration, xmlSignature);
+      let myXML = oadr2b_model.createPartyRegistration(oadrPartyRegistration, xmlSignature, xmlSignatureKey);
 
       
       sendRequest(node.url, 'EiRegisterParty', myXML, function(
@@ -499,7 +494,7 @@ module.exports = function(RED) {
         requestID: uuid,
         venID: node.venID,
         registrationID:  registrationID,
-      }, xmlSignature);
+      }, xmlSignature, xmlSignatureKey);
 
       sendRequest(node.url, 'EiRegisterParty', myXML, function(
         err,
@@ -550,7 +545,7 @@ module.exports = function(RED) {
           requestID: uuid,
           venID: params.venID || _ids.venID || venID
         }
-      }, xmlSignature);
+      }, xmlSignature, xmlSignatureKey);
 
       sendRequest(node.url, 'EiEvent', myXML, function(err, response, body) {
         if (err) {
@@ -622,7 +617,7 @@ module.exports = function(RED) {
       // let myXML = getXMLpayload('oadrCreatedEvent', oadrCreatedEvent);
       // console.log(myXML);
 
-      let myXML = oadr2b_model.createdEvent(oadrCreatedEvent, xmlSignature);
+      let myXML = oadr2b_model.createdEvent(oadrCreatedEvent, xmlSignature, xmlSignatureKey);
 
       sendRequest(node.url, 'EiEvent', myXML, function(err, response, body) {
         if (err) {
@@ -681,7 +676,7 @@ module.exports = function(RED) {
       }
       try {
         // console.log(oadrRegisterReport)
-        let myXML = oadr2b_model.registerReport(oadrRegisterReport, xmlSignature)
+        let myXML = oadr2b_model.registerReport(oadrRegisterReport, xmlSignature, xmlSignatureKey)
         // console.log(myXML)
         sendRequest(node.url, 'EiReport', myXML, function(err, response, body) {
           if (err) {
@@ -722,7 +717,7 @@ module.exports = function(RED) {
       };
 
       // let myXML = getXMLpayload('oadrRegisteredReport', oadrRegisteredReport);
-      let myXML = oadr2b_model.registeredReport(oadrRegisteredReport, xmlSignature)
+      let myXML = oadr2b_model.registeredReport(oadrRegisteredReport, xmlSignature, xmlSignatureKey)
 
       sendRequest(node.url, 'EiReport', myXML, function(err, response, body) {
         if (err) {
@@ -745,7 +740,7 @@ module.exports = function(RED) {
       };
 
       // let myXML = getXMLpayload('oadrUpdateReport', oadrUpdateReport);
-      let myXML = oadr2b_model.updateReport(oadrUpdateReport, xmlSignature);
+      let myXML = oadr2b_model.updateReport(oadrUpdateReport, xmlSignature, xmlSignatureKey);
 
       sendRequest(node.url, 'EiReport', myXML, function(err, response, body) {
         if (err) {
@@ -770,7 +765,7 @@ module.exports = function(RED) {
         venID = ids.venID;
       }
 
-      let myXML = oadr2b_model.poll({venID: params.venID || _ids.venID || venID}, xmlSignature)
+      let myXML = oadr2b_model.poll({venID: venID}, xmlSignature,xmlSignatureKey)
 
       sendRequest(node.url, 'OadrPoll', myXML, function(err, response, body) {
         if (err) {
@@ -799,7 +794,7 @@ module.exports = function(RED) {
       }
 
       // let myXML = getXMLpayload('oadrResponse', oadrResponse);
-      let myXML = oadr2b_model.response(oadrResponse, xmlSignature);
+      let myXML = oadr2b_model.response(oadrResponse, xmlSignature, xmlSignatureKey);
       //console.log('Event Names:', ee.eventNames());
       ee.emit(params.requestID, myXML);
     };
@@ -864,7 +859,7 @@ module.exports = function(RED) {
 
       // let myXML = getXMLpayload('oadrCreateOpt', oadrCreateOpt);
 
-      let myXML = oadr2b_model.createOpt(oadrCreateOpt, xmlSignature);
+      let myXML = oadr2b_model.createOpt(oadrCreateOpt, xmlSignature, xmlSignatureKey);
       sendRequest(node.url, 'EiOpt', myXML, function(err, response, body) {
         if (err) {
           // console.log('Error:', err);
@@ -889,7 +884,7 @@ module.exports = function(RED) {
       };
 
       // let myXML = getXMLpayload('oadrCancelOpt', oadrCancelOpt);
-      let myXML = oadr2b_model.cancelOpt(oadrCancelOpt, xmlSignature);
+      let myXML = oadr2b_model.cancelOpt(oadrCancelOpt, xmlSignature, xmlSignatureKey);
 
       sendRequest(node.url, 'EiOpt', myXML, function(err, response, body) {
         if (err) {
