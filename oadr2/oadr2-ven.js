@@ -24,6 +24,10 @@ const EventEmitter = events.EventEmitter;
 let tlsNode;
 let oadrProfile;
 let xmlSignature;
+let oadrReportOnly;
+let oadrHttpPullModel;
+let oadrProfileName;
+let transportAddress;
 
 let ee;
 
@@ -371,33 +375,55 @@ module.exports = function(RED) {
       let inCmd = msg.payload.requestType || 'unknown';
       let uuid = params.requestID || uuidv4();
 
-      if(params.xmlSignature) {
+      if(params.xmlSignature != null) {
         xmlSignature = params.xmlSignature
         oadr2b_model = oadr2b_model_builder(xmlSignature, tlsNode);
-      }
-      else {
+      } else {
         xmlSignature = false
         oadr2b_model = oadr2b_model_builder(xmlSignature, false);
       }
-      
+
+      if(params.oadrProfileName!= null) {
+        oadrProfile = params.oadrProfileName;
+      } else {
+        oadrProfile = '2.0b'
+      }
+
+      if(params.oadrHttpPullModel!= null) {
+        oadrHttpPullModel = params.oadrHttpPullModel;
+      } else {
+        oadrHttpPullModel = true
+      }
+
+      if(params.oadrReportOnly!= null) {
+        oadrReportOnly = params.oadrReportOnly;
+      } else {
+        oadrReportOnly = false
+      }
+      if(!oadrHttpPullModel) {
+        transportAddress = params.oadrTransportAddress || node.transportAddress || null;
+      }
+     
+      let profile = {
+        xmlSignature: xmlSignature,
+        oadrProfileName: oadrProfileName,
+        oadrHttpPullModel: oadrHttpPullModel,
+        oadrReportOnly: oadrReportOnly,
+        oadrTransportAddress: transportAddress
+      };
+
+      flowContext.set(`${node.name}:RegistrationProfile`, profile);
 
       let oadrPartyRegistration = {
         requestID: uuid,
         venID: node.venID,
-        oadrProfileName: params.oadrProfileName || oadrProfile || '2.0b',
+        oadrProfileName: oadrProfile,
         oadrTransportName: 'simpleHttp',
-        oadrReportOnly:
-          typeof params.oadrReportOnly === 'boolean'
-            ? params.oadrReportOnly
-            : false,
+        oadrReportOnly:oadrReportOnly,
         oadrXmlSignature: xmlSignature,
         oadrVenName: node.name,
-        oadrHttpPullModel:
-          typeof params.oadrHttpPullModel === 'boolean'
-            ? params.oadrHttpPullModel
-            : true,
-        oadrTransportAddress:
-          params.oadrTransportAddress || node.transportAddress || null
+        oadrHttpPullModel: oadrHttpPullModel,
+        oadrTransportAddress: transportAddress
       }
       let myXML = oadr2b_model.createPartyRegistration(oadrPartyRegistration);
 
@@ -451,6 +477,8 @@ module.exports = function(RED) {
         venID: node.venID,
         registrationID:  registrationID,
       });
+
+      flowContext.set(`${node.name}:RegistrationProfile`, null);
 
       sendRequest(node.url, 'EiRegisterParty', myXML, function(
         err,
@@ -687,6 +715,10 @@ module.exports = function(RED) {
 
       sendRequest(node.url, 'OadrPoll', myXML, function(err, response, body) {
         let msg = prepareResMsg(uuid, inCmd, body);
+        
+        msg.oadr.requestType = msg.oadr.responseType
+        msg.oadr.msgType = "request"
+        console.log(msg)
         node.send(msg);
       });
     };
