@@ -139,7 +139,6 @@ module.exports = function(RED) {
     xmlSignature = config.xmlSignature || false;
 
      var oadr2b_model = oadr2b_model_builder(xmlSignature, tlsNode);
-     console.log(oadr2b_model)
 
     this.pushPort = config.pushport;
     this.venID = config.venid || '';
@@ -339,7 +338,7 @@ module.exports = function(RED) {
         body
       ) {
         let msg = prepareResMsg(uuid, inCmd, body);
-        console.log(msg)
+
         if (msg.oadr.responseType == 'oadrCreatedPartyRegistration') {
           let oadrObj = msg.payload.data[msg.oadr.responseType];
 
@@ -718,7 +717,6 @@ module.exports = function(RED) {
         
         msg.oadr.requestType = msg.oadr.responseType
         msg.oadr.msgType = "request"
-        console.log(msg)
         node.send(msg);
       });
     };
@@ -751,8 +749,6 @@ module.exports = function(RED) {
       let optID = params.optID || uuidv4();
       let date1 = new Date().toISOString();
 
-      // console.log(JSON.stringify(params));
-
       let oadrCreateOpt = {
         'optID': optID,
         'optType': params.optType || 'optOut',
@@ -774,7 +770,7 @@ module.exports = function(RED) {
 
       if (params.hasOwnProperty('resourceID')) {
         oadrCreateOpt['eiTarget'] = {
-          'resourceID': params.resourceID,
+          'resourceID': [params.resourceID],
         };
       }
 
@@ -789,7 +785,7 @@ module.exports = function(RED) {
       } else {
         // Adding a single basic Opt event
         oadrCreateOpt.vavailability.components = {
-          available: {
+          available: [{
             properties: {
               dtstart: {
                 'date-time': params.dtstart || params['date-time'] || date1,
@@ -798,13 +794,14 @@ module.exports = function(RED) {
                 duration: params.duration || 'PT1H',
               },
             },
-          },
+          }]
         };
       }
 
       let myXML = oadr2b_model.createOpt(oadrCreateOpt);
       sendRequest(node.url, 'EiOpt', myXML, function(err, response, body) {
-        
+        let msg = prepareResMsg(uuid, inCmd, body);
+        node.send(msg);
       });
     };
 
