@@ -79,6 +79,8 @@ module.exports = function(xmlSignature, tlsNode) {
 	var publicKey;
 
 	function loadKeys(){
+
+
 		if(privateKey == null || publicKey == null) {
 			var pkPromise = webcrypto.subtle.importKey(
 			    "pkcs8",
