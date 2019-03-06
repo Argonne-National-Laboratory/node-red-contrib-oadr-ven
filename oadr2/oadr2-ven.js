@@ -330,7 +330,7 @@ module.exports = function(RED) {
       ) {
         if (err) {
           // console.log('Error:', err);
-          node.err('Error: ' + err);
+          console.error('Error: ' + err);
         } else {
           let msg = prepareResMsg(uuid, inCmd, body);
 
