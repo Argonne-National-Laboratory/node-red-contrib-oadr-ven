@@ -211,6 +211,10 @@ module.exports = function(xmlSignature, tlsNode) {
 		return transform("oadrResponse", payload);
 	}
 
+	oadr2b_model.canceledPartyRegistration = function(payload) {
+		return transform("oadrCanceledPartyRegistration", payload);
+	}
+
 	oadr2b_model.createOpt = function(payload) {
 		return transform("oadrCreateOpt", payload);
 	}

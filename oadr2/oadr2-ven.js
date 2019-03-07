@@ -193,6 +193,7 @@ module.exports = function(RED) {
       // console.log('Made it to the inbound server')
       
       let msg = prepareReqMsg(req.rawBody);
+
       let oadrObj = {};
 
       if (
@@ -506,6 +507,7 @@ module.exports = function(RED) {
       });
     };
 
+
     const RequestEvent = function(msg) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || 'unknown';
@@ -738,9 +740,48 @@ module.exports = function(RED) {
       }
 
       let myXML = oadr2b_model.response(oadrResponse);
-      myXML.then((xml) => {ee.emit(params.requestID, xml);})
+
+      myXML.then((xml) => { ee.emit(params.requestID, xml);})
       
     };
+
+    const CanceledPartyRegistration = function(msg) {
+       let ids = flowContext.get(`${node.name}:IDs`);
+      let params = msg.payload;
+
+      let oadrResponse = {
+        'eiResponse': {
+          responseCode: params.responseCode || 200,
+          responseDescription: params.responseDescription || 'OK',
+          'requestID': params.requestID,
+        },
+      };
+
+      if (oadrProfile !== '2.0a') {
+        oadrResponse.venID = ids.venID;
+        oadrResponse.registrationID = ids.registrationID;
+      }
+
+      ids = {
+        registrationID: '',
+        venID: ids.venID,
+        vtnID: '',
+      };
+
+
+      flowContext.set(`${node.name}:IDs`, ids);
+
+      flowContext.set(`${node.name}:RegistrationProfile`, null);
+
+      let myXML = oadr2b_model.canceledPartyRegistration(oadrResponse);
+
+      myXML.then((xml) => { ee.emit(params.requestID, xml);})
+      
+    };
+
+
+
+    
 
     const CreateOpt = function(msg) {
       let params = msg.payload;
@@ -883,6 +924,10 @@ module.exports = function(RED) {
             case 'Response':
               //console.log('doing a Response');
               Response(msg);
+              break;
+            case 'CanceledPartyRegistration':
+              //console.log('doing a Response');
+              CanceledPartyRegistration(msg);
               break;
           }
         }
