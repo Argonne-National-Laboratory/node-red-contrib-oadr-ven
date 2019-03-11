@@ -193,7 +193,7 @@ module.exports = function(RED) {
       // console.log('Made it to the inbound server')
       
       let msg = prepareReqMsg(req.rawBody);
-
+      console.log(msg)
       let oadrObj = {};
 
       if (
@@ -746,7 +746,7 @@ module.exports = function(RED) {
     };
 
     const CanceledPartyRegistration = function(msg) {
-       let ids = flowContext.get(`${node.name}:IDs`);
+      let ids = flowContext.get(`${node.name}:IDs`);
       let params = msg.payload;
 
       let oadrResponse = {
@@ -778,6 +778,65 @@ module.exports = function(RED) {
       myXML.then((xml) => { ee.emit(params.requestID, xml);})
       
     };
+
+
+    const CreatedReport = function(msg) {
+      let ids = flowContext.get(`${node.name}:IDs`);
+      let params = msg.payload;
+
+      let oadrResponse = {
+        'eiResponse': {
+          responseCode: params.responseCode || 200,
+          responseDescription: params.responseDescription || 'OK',
+          'requestID': params.requestID,
+        },
+        oadrPendingReports: {
+          reportRequestID: []
+        }
+      };
+
+      if (oadrProfile !== '2.0a') {
+        oadrResponse.venID = ids.venID;
+      }
+
+
+
+      let myXML = oadr2b_model.createdReport(oadrResponse);
+
+      myXML.then((xml) => { ee.emit(params.requestID, xml);})
+      
+    };
+
+    const CanceledReport = function(msg) {
+      let ids = flowContext.get(`${node.name}:IDs`);
+      let params = msg.payload;
+
+      let oadrResponse = {
+        'eiResponse': {
+          responseCode: params.responseCode || 200,
+          responseDescription: params.responseDescription || 'OK',
+          'requestID': params.requestID,
+        },
+        oadrPendingReports: {
+          reportRequestID: []
+        }
+      };
+
+      if (oadrProfile !== '2.0a') {
+        oadrResponse.venID = ids.venID;
+      }
+
+
+
+      let myXML = oadr2b_model.canceledReport(oadrResponse);
+
+      myXML.then((xml) => { ee.emit(params.requestID, xml);})
+      
+    };
+
+
+
+    
 
 
 
@@ -929,6 +988,14 @@ module.exports = function(RED) {
               //console.log('doing a Response');
               CanceledPartyRegistration(msg);
               break;
+
+            case 'CreatedReport':
+              CreatedReport(msg);
+              break
+
+            case 'CanceledReport':
+              CanceledReport(msg);
+              break
           }
         }
       }

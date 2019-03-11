@@ -223,6 +223,14 @@ module.exports = function(xmlSignature, tlsNode) {
 		return transform("oadrCancelOpt", payload);
 	}
 
+	oadr2b_model.createdReport = function(payload) {
+		return transform("oadrCreatedReport", payload);
+	}
+
+	oadr2b_model.canceledReport = function(payload) {
+		return transform("oadrCanceledReport", payload);
+	}
+
 	oadr2b_model.parse = unmarshal;
 
 	return oadr2b_model;
