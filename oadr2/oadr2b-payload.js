@@ -77,11 +77,12 @@ module.exports = function(xmlSignature, tlsNode) {
 
 	var privateKey;
 	var publicKey;
+	var type = "rsa";
 
-	function loadKeys(){
-
-
+	function loadRsaKeys(){
+		
 		if(privateKey == null || publicKey == null) {
+			console.log("Test load RSA keys")
 			var pkPromise = webcrypto.subtle.importKey(
 			    "pkcs8",
 			    pkToArrayBuffer(tlsNode.key),
@@ -90,10 +91,37 @@ module.exports = function(xmlSignature, tlsNode) {
 			        hash: {name: "SHA-256"} // or SHA-512
 			    },
 			    true,
-			    [ "sign"]
+			    [ "sign", "verify"]
 			);
 			var pubPromise = certToArrayBuffer(tlsNode.cert)
 				.exportKey({ name: "RSASSA-PKCS1-v1_5", hash: { name: "SHA-256" } });
+
+			
+			return Promise.all([pkPromise, pubPromise]);
+		}
+
+		return new Promise((resolve, reject) => {
+			resolve([privateKey, publicKey]);
+		});	
+	}
+
+	function loadEccKeys(){
+		
+		if(privateKey == null || publicKey == null) {
+			console.log("Test load ECC keys")
+			var pkPromise = webcrypto.subtle.importKey(
+			    "pkcs8",
+			    pkToArrayBuffer(tlsNode.key),
+			    {   //these are the algorithm options
+			        name: "ECDSA",
+			        namedCurve: "P-384", //can be "P-256", "P-384", or "P-521"
+			    },
+			    true,
+			    [ "sign", "verify"]
+			);
+			var pubPromise = certToArrayBuffer(tlsNode.cert)
+				.exportKey({ name: "ECDSA", hash: { name: "SHA-256" } });
+
 
 			return Promise.all([pkPromise, pubPromise]);
 		}
@@ -104,53 +132,118 @@ module.exports = function(xmlSignature, tlsNode) {
 	}
 
 	function cacheKeys(keys){
-		if(publicKey == null || privateKey == null) {
+		if(keys != null && (publicKey == null || privateKey == null)) {
 			privateKey = keys[0];
 			publicKey = keys[1];
 		}
 		return new Promise((resolve) => {resolve([privateKey, publicKey])});
 	}
 
-	var sign = function(payloadType, payload) {
-	
-		let signature = new xmldsigjs.SignedXml();
+	function addSignatureWrapperToPayload(payloadType, payload) {
 		var env = {};
 		env[payloadType] = payload
 		env.id = "signedObject"
 		var envelop = {
 			oadrSignedObject: env,
 		}
+		return envelop;
+	}
 
+	
+
+
+	var sign = function(payloadType, payload) {
+		let signature = new xmldsigjs.SignedXml();
+		var envelop = addSignatureWrapperToPayload(payloadType, payload);
 		var withoutSig = marshal("oadrPayload", envelop);
+		return loadRsaKeys()
+			.catch(e => {
+				// fallback to ECDSA if RSA failed
+				type = "ecdsa";
+				return loadEccKeys()
+			})
+			.catch(e => {
+				console.log(e);
 
-
-
-		return loadKeys()
+				type = "unknown"
+				throw e;
+			})
 			.then(cacheKeys)
 			.then(function(keys){
 				
-				return signature.Sign(                                  // Signing document
-				    { name: "RSASSA-PKCS1-v1_5", hash: { name: "SHA-256" }  },                        // algorithm 
-				    keys[0],                                      // key 
-				    xmldsigjs.Parse(withoutSig),                                 // document
-				    {                  
-				        keyValue: keys[1],
-				        references: [
-				            {  uri:"", hash: "SHA-256", transforms: ["enveloped", "c14n"]},
-				        ]
-				    })	
+				if(keys != null && keys[0] != null && keys[1] != null){
+					var alg;
+					if(type == "rsa"){
+						alg =  { name: "RSASSA-PKCS1-v1_5", hash: { name: "SHA-256" }  };
+					}
+					else if(type == "ecdsa"){
+						alg =  { name: "ECDSA", hash: { name: "SHA-256" } };
+					}
+
+					if(alg != null){
+						return signature.Sign(                                  // Signing document
+					    alg,                        // algorithm 
+					    keys[0],                                      // key 
+					    xmldsigjs.Parse(withoutSig),                                 // document
+					    {                  
+					        keyValue: keys[1],
+					        references: [
+					            {  uri:"", hash: "SHA-256", transforms: ["enveloped", "c14n"]},
+					        ]
+					    })	
+					}
+
+					
+				}
+				
 			})
 		    .then(() => {
 		    	return signature.toString();
 		    })
-		    .catch((e) => {console.log(e)})
+		    .catch((e) => {console.log("Can't load VEN certificates: ", e)})
 	}
 
-	var transform = function(payloadType, payload) {
+	var verify = function(payload) {
+		var xml = xmldsigjs.Parse(payload);
+	    var signature = new xmldsigjs.SignedXml(xml);
+	    var xmlSignatures = xmldsigjs.Select(xml, "//*[local-name(.)='Signature' and namespace-uri(.)='http://www.w3.org/2000/09/xmldsig#']");
+
+	    if (!(xmlSignatures && xmlSignatures.length)){
+	    	return console.log("Cannot get XML signature from XML document");
+	    }
+        
+        signature.LoadXml(xmlSignatures[0]);
+
+	    return signature.Verify()
+	        .then(function(valid) {
+	            if(valid) {
+	            	return new Promise((resolve, reject) => {
+						resolve(unmarshal(payload));
+					});	
+	            }
+	            else {
+	            	throw "verify signature failed";
+	            }
+	            
+	        })
+	        .catch(function(e) {
+	            throw "verify signature failed";
+	        });
+	}
+
+	var transformSign = function(payloadType, payload) {
 		if(!xmlSignature){
 			return new Promise((resolve) => {resolve( marshal(payloadType, payload))});
 		}else {
 			return sign(payloadType, payload);
+		}
+	}
+
+	var transformVerify = function(payload) {
+		if(!xmlSignature){
+			return new Promise((resolve) => {resolve( unmarshal(payload))});
+		}else {
+			return verify(payload);
 		}
 	}
 
@@ -164,74 +257,100 @@ module.exports = function(xmlSignature, tlsNode) {
 		});
 	}
 
-	var unmarshal = function(payloadStr, callback){
-		return unmarshaller.unmarshalString(payloadStr,callback);
+	var unmarshal = function(payload){
+		return unmarshaller.unmarshalString(payload);
 	}
 
 
 	var oadr2b_model = {};
 
 	oadr2b_model.cancelPartyRegistration = function(payload) {
-		return transform("oadrCancelPartyRegistration", payload);
+		return transformSign("oadrCancelPartyRegistration", payload);
 	}
 
 	oadr2b_model.createPartyRegistration = function(payload) {
-		return transform("oadrCreatePartyRegistration", payload);
+		return transformSign("oadrCreatePartyRegistration", payload);
 	}
 
 	oadr2b_model.queryRegistration = function(payload) {
-		return transform("oadrQueryRegistration", payload);
+		return transformSign("oadrQueryRegistration", payload);
 	}
 
 	oadr2b_model.requestEvent = function(payload) {
-		return transform("oadrRequestEvent", payload);
+		return transformSign("oadrRequestEvent", payload);
 	}
 
 	oadr2b_model.registeredReport = function(payload) {
-		return transform("oadrRegisteredReport", payload);
+		return transformSign("oadrRegisteredReport", payload);
 	}
 
 	oadr2b_model.createdEvent = function(payload) {
-		return transform("oadrCreatedEvent", payload);
+		return transformSign("oadrCreatedEvent", payload);
 	}
 
 	oadr2b_model.registerReport = function(payload) {
-		return transform("oadrRegisterReport", payload);
+		return transformSign("oadrRegisterReport", payload);
 	}
 
 	oadr2b_model.updateReport = function(payload) {
-		return transform("oadrUpdateReport", payload);
+		return transformSign("oadrUpdateReport", payload);
 	}
 
 	oadr2b_model.poll = function(payload) {
-		return transform("oadrPoll", payload);
+		return transformSign("oadrPoll", payload);
 	}
 
 	oadr2b_model.response = function(payload) {
-		return transform("oadrResponse", payload);
+		return transformSign("oadrResponse", payload);
 	}
 
 	oadr2b_model.canceledPartyRegistration = function(payload) {
-		return transform("oadrCanceledPartyRegistration", payload);
+		return transformSign("oadrCanceledPartyRegistration", payload);
 	}
 
 	oadr2b_model.createOpt = function(payload) {
-		return transform("oadrCreateOpt", payload);
+		return transformSign("oadrCreateOpt", payload);
 	}
 
 	oadr2b_model.cancelOpt = function(payload) {
-		return transform("oadrCancelOpt", payload);
+		return transformSign("oadrCancelOpt", payload);
 	}
 
 	oadr2b_model.createdReport = function(payload) {
-		return transform("oadrCreatedReport", payload);
+		return transformSign("oadrCreatedReport", payload);
 	}
 
 	oadr2b_model.canceledReport = function(payload) {
-		return transform("oadrCanceledReport", payload);
+		return transformSign("oadrCanceledReport", payload);
 	}
 
-	oadr2b_model.parse = unmarshal;
+	oadr2b_model.parse = function(payload) {
+		return transformVerify(payload);
+	}
+
+	oadr2b_model.hasWrapper = function(payload) {
+		return payload.oadrSignedObject != null;
+	}
+
+	oadr2b_model.getWrappedPayloadName = function(payload) {
+		var properties = Object.keys(payload.oadrSignedObject)
+		for(var i in properties) {
+			if(properties[i] != "TYPE_NAME" && properties[i] != "id"){
+				return properties[i];
+			}
+		}
+	}
+
+	oadr2b_model.wrap = function(payloadType, payload) {
+		return addSignatureWrapperToPayload(payloadType, payload);
+	}
+
+	oadr2b_model.unwrap = function(payloadType, payload) {
+		return payload.oadrSignedObject[payloadType];
+	}
+
+	
+
 
 	return oadr2b_model;
 }
