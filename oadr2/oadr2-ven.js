@@ -111,13 +111,14 @@ module.exports = function(RED) {
 
       payloadPromise
         .then((xml) => {
+          debug(xml);
           options.body = xml;
           return request(options);
         })
         .catch(errors.StatusCodeError, handleError)
         .catch(errors.RequestError, handleError)
         .then((response) => {
-          console.log('HTTP GET @ service: ' + ei + ' - statusCode: ' + response.statusCode);
+          debug('HTTP GET @ service: ' + ei + ' - statusCode: ' + response.statusCode);
           cb(null, response, response.body);
         })
         .catch(e => { console.log('sendRequest failed: ', e); });

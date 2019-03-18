@@ -13,6 +13,8 @@ var xmldsigjs = require('xmldsigjs');
 var WebCrypto = require('node-webcrypto-ossl');
 var webcrypto = new WebCrypto();
 
+const debug = require('debug')('anl:oadr');
+
 // xmldsigjs.Signature.prefix = "";
 // xmldsigjs.DigestMethod.prefix = "";
 // xmldsigjs.CanonicalizationMethod.prefix = "";
