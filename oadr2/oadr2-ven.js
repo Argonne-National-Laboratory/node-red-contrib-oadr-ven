@@ -409,7 +409,7 @@ module.exports = function(RED) {
         xmlSignature = false;
 
       }
-      oadr2b_model = oadr2b_model_builder(xmlSignature, stripPayloadEnv, tlsNode);
+      // oadr2b_model = oadr2b_model_builder(xmlSignature, stripPayloadEnv, tlsNode);
 
       if (params.oadrProfileName != null) {
         oadrProfile = params.oadrProfileName;
