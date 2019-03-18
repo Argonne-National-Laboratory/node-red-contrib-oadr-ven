@@ -36,9 +36,14 @@
     "debug": "^4.1.1",
     "express": "^4.16.4",
     "fast-xml-parser": "^3.12.12",
+    "jsonix": "^2.4.1",
+    "node-webcrypto-ossl": "^1.0.39",
+    "node-webcrypto-p11": "^2.0.2",
     "request": "^2.88.0",
+    "request-promise": "^4.2.4",
     "uuid": "^3.3.2",
-    "xml-js": "^1.6.9"
+    "xml-js": "^1.6.9",
+    "xmldsigjs": "^2.0.22"
   },
   "devDependencies": {
     "eslint": "^5.12.1",
