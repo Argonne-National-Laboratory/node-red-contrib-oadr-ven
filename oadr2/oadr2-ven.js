@@ -324,6 +324,10 @@ module.exports = function(RED) {
 
     }
 
+    //
+    // This function removes the TYPE_NAME property added by jsonix. It isn't needed in the 
+    // node-red flow.
+    //
     function cleanup(theObj) {
       // debug(theObj);
       for (var prop in theObj) {
@@ -337,7 +341,7 @@ module.exports = function(RED) {
       }
       return theObj;
     }
-  
+
 
     const QueryRegistration = function(msg) {
 

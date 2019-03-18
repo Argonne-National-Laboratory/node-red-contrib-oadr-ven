@@ -240,10 +240,17 @@ module.exports = function(xmlSignature, tlsNode) {
   };
 
   var transformSign = function(payloadType, payload) {
+
+    // debug('In transform');
+
     if (!xmlSignature) {
-      return new Promise(resolve => {
-        resolve(marshal(payloadType, payload));
-      });
+      var env = {};
+      env[payloadType] = payload;
+      env.id = 'signedObject';
+      var envelop = {
+        oadrSignedObject: env,
+      };
+      return (new Promise(resolve => { resolve(marshal('oadrPayload', envelop)); }));
     } else {
       return sign(payloadType, payload);
     }
