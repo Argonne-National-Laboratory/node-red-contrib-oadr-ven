@@ -111,7 +111,7 @@ module.exports = function(RED) {
 
       payloadPromise
         .then((xml) => {
-          debug(xml);
+          // debug(xml);
           options.body = xml;
           return request(options);
         })
@@ -281,7 +281,7 @@ module.exports = function(RED) {
             msg.oadr.responseType = outCmd;
           }
           msg.oadr.requestType = inCmd;
-          return msg;
+          return cleanup(msg);
         })
         .catch(e => {
           console.log('prepareResMsg: ', inCmd, body);
@@ -324,6 +324,20 @@ module.exports = function(RED) {
 
     }
 
+    function cleanup(theObj) {
+      // debug(theObj);
+      for (var prop in theObj) {
+        // console.log(typeof(dirty[prop]));
+        // console.log(prop);
+        if (typeof theObj[prop] === 'object') {
+          cleanup(theObj[prop]);
+        } else if (prop === 'TYPE_NAME') {
+          delete theObj[prop];
+        }
+      }
+      return theObj;
+    }
+  
 
     const QueryRegistration = function(msg) {
 
