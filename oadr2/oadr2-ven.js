@@ -76,6 +76,7 @@ module.exports = function(RED) {
     let oadrHttpPullModel;
     // let oadrProfileName;
     let transportAddress;
+    let stripPayloadEnv = false;
 
     function sendRequest(url, ei, payloadPromise, cb) {
       if (!(url.indexOf('http://') === 0 || url.indexOf('https://') === 0)) {
@@ -130,12 +131,15 @@ module.exports = function(RED) {
       tlsNode = RED.nodes.getNode(config.tls);
     }
 
+    if (config.stripPayloadEnv) {
+      stripPayloadEnv = config.stripPayloadEnv;
+    }
 
     oadrProfile = config.profile || '2.0b';
 
     xmlSignature = config.xmlSignature || false;
 
-    var oadr2b_model = oadr2b_model_builder(xmlSignature, tlsNode);
+    var oadr2b_model = oadr2b_model_builder(xmlSignature, stripPayloadEnv, tlsNode);
 
     this.pushPort = config.pushport;
     this.venID = config.venid || '';
@@ -325,7 +329,7 @@ module.exports = function(RED) {
     }
 
     //
-    // This function removes the TYPE_NAME property added by jsonix. It isn't needed in the 
+    // This function removes the TYPE_NAME property added by jsonix. It isn't needed in the
     // node-red flow.
     //
     function cleanup(theObj) {
@@ -405,7 +409,7 @@ module.exports = function(RED) {
         xmlSignature = false;
 
       }
-      oadr2b_model = oadr2b_model_builder(xmlSignature, tlsNode);
+      oadr2b_model = oadr2b_model_builder(xmlSignature, stripPayloadEnv, tlsNode);
 
       if (params.oadrProfileName != null) {
         oadrProfile = params.oadrProfileName;

@@ -15,6 +15,7 @@ var webcrypto = new WebCrypto();
 
 const debug = require('debug')('anl:oadr');
 
+
 // xmldsigjs.Signature.prefix = "";
 // xmldsigjs.DigestMethod.prefix = "";
 // xmldsigjs.CanonicalizationMethod.prefix = "";
@@ -69,10 +70,12 @@ function certToArrayBuffer(pem) {
   return new xmldsigjs.X509Certificate(b64);
 }
 
-module.exports = function(xmlSignature, tlsNode) {
+module.exports = function(xmlSignature, stripPayloadEnv, tlsNode) {
   var privateKey;
   var publicKey;
   var type = 'rsa';
+
+  debug(`Strip oadrPayload and oadrSignedObject envelope set to ${stripPayloadEnv}`);
 
   function loadRsaKeys() {
     if (privateKey == null || publicKey == null) {
@@ -244,13 +247,19 @@ module.exports = function(xmlSignature, tlsNode) {
     // debug('In transform');
 
     if (!xmlSignature) {
-      var env = {};
-      env[payloadType] = payload;
-      env.id = 'signedObject';
-      var envelop = {
-        oadrSignedObject: env,
-      };
-      return (new Promise(resolve => { resolve(marshal('oadrPayload', envelop)); }));
+      if (stripPayloadEnv){
+        return new Promise(resolve => {
+          resolve(marshal(payloadType, payload));
+        });
+      } else {
+        var env = {};
+        env[payloadType] = payload;
+        env.id = 'signedObject';
+        var envelop = {
+          oadrSignedObject: env,
+        };
+        return (new Promise(resolve => { resolve(marshal('oadrPayload', envelop)); }));
+      }
     } else {
       return sign(payloadType, payload);
     }
