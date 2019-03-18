@@ -6915,6 +6915,7 @@ var oadr2b_model_Module_Factory = function() {
     oadr2b_model: oadr2b_model,
   };
 };
+
 if (typeof define === 'function' && define.amd) {
   define([], oadr2b_model_Module_Factory);
 } else {
