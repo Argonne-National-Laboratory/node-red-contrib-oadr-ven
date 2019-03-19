@@ -212,7 +212,24 @@ module.exports = function(RED) {
         let id = msg.oadr.requestID || 0;
 
         if (msg.oadr.responseType == 'oadrDistributeEvent') {
-          res.sendStatus(200);
+          // res.sendStatus(200);
+          let ids = flowContext.get(`${node.name}:IDs`);
+          let oadrResponse = {
+            eiResponse: {
+              responseCode: '200',
+              responseDescription: 'OK',
+              requestID: id,
+            },
+          };
+
+          if (oadrProfile !== '2.0a') {
+            oadrResponse.venID = ids.venID;
+          }
+
+          let myXML = oadr2b_model.response(oadrResponse);
+          myXML.then(msg => {
+            res.send(msg);
+          });
         } else {
           let to = setTimeout(
             function(id) {
@@ -409,7 +426,7 @@ module.exports = function(RED) {
         xmlSignature = false;
 
       }
-      // oadr2b_model = oadr2b_model_builder(xmlSignature, stripPayloadEnv, tlsNode);
+      oadr2b_model = oadr2b_model_builder(xmlSignature, stripPayloadEnv, tlsNode);
 
       if (params.oadrProfileName != null) {
         oadrProfile = params.oadrProfileName;
@@ -597,7 +614,7 @@ module.exports = function(RED) {
       let oadrCreatedEvent = {
         eiCreatedEvent: {
           eiResponse: {
-            responseCode: params.responseCode || 200,
+            responseCode: params.responseCode || '200',
             responseDescription: params.responseDescription || 'OK',
             requestID: uuid,
           },
@@ -615,7 +632,7 @@ module.exports = function(RED) {
           ] = [];
           params.eventResponses.forEach(er => {
             let eventResponse = {};
-            eventResponse['responseCode'] = er.responseCode || 200;
+            eventResponse['responseCode'] = er.responseCode || '200';
             eventResponse['responseDescription'] =
               er.responseDescription || 'OK';
             eventResponse['requestID'] = er.requestID || uuid;
@@ -633,18 +650,20 @@ module.exports = function(RED) {
         }
       }
 
+      let profile = flowContext.get(`${node.name}:RegistrationProfile`);
+
       let myXML = oadr2b_model.createdEvent(oadrCreatedEvent);
-
-      sendRequest(node.url, 'EiEvent', myXML, function(err, response, body) {
-        if (err) { // TODO: Update
-          node.error(err);
-          return;
-        }
-
-        prepareResMsg(uuid, inCmd, body).then(msg => {
-          node.send(msg);
+      if (profile.oadrHttpPullModel){
+        sendRequest(node.url, 'EiEvent', myXML, function(err, response, body) {
+          prepareResMsg(uuid, inCmd, body).then(msg => {
+            node.send(msg);
+          });
         });
-      });
+      } else {
+        myXML.then((xml) => { ee.emit(params.requestID, xml); });
+      }
+
+
     };
 
     const RegisterReport = function(msg) {
