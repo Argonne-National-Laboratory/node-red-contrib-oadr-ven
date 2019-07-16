@@ -26,6 +26,7 @@
             pushurl: {value: "", required: false},
             venid: {value: "", required: false},
             pollrate: {value: "5", required: false},
+            stripPayloadEnv: {value: "false", required: false},
             log: { value: false, required: true },
             pathlog: {value: "", required: false}
         },
@@ -93,10 +94,17 @@
         <label for="node-input-venid"><i class="fa fa-tag"></i> VEN ID</label>
         <input type="text" id="node-input-venid" placeholder="optional">
     </div>
-        
+
+    <div class="form-row">
+        <input type="checkbox" id="node-input-stripPayloadEnv" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-stripPayloadEnv" style="width: auto; font-weight: bold" data-i18n="httpin.use-tls">Remove &lt;oadrPayload&gt;/&lt;oadrSignedObject&gt; if no XML-Signature?</label>
+    </div>
+    <br/><hl/>
     <div class="form-row">
         <input type="checkbox" id="node-input-usetls" style="display: inline-block; width: auto; vertical-align: top;">
         <label for="node-input-usetls" style="width: auto" data-i18n="httpin.use-tls">Enable secure (SSL/TLS) connection</label>
+    </div>
+    <div class="form-row">
         <div id="node-row-tls" class="hide">
             <label style="width: auto; margin-left: 20px; margin-right: 10px;" for="node-input-tls"><span data-i18n="httpin.tls-config"></span></label><input type="text" style="width: 300px" id="node-input-tls">
         </div>
@@ -111,19 +119,23 @@
     <h3>Configuration Settings</h3>
     <dl>
         <dt>Name:</dt>
-        <dd>The name registered with the VTN as well as the the name shown on the workspace</dd>
+            <dd>The name registered with the VTN as well as the the name shown on the workspace</dd>
         <dt>VTN URL:</dt>
-        <dd>The url of the VTN</dd>
+            <dd>The url of the VTN</dd>
         <dt>Profile</dt>
-        <dd>The profile (2.0a or 2.0b) that this VEN is supporting</dd>        
+            <dd>The profile (2.0a or 2.0b) that this VEN is supporting</dd>        
         <dt>Push Port</dt>
-        <dd>The port used for VTN push messages</dd>
+            <dd>The port used for VTN push messages</dd>
         <dt>Push ULR</dt>
-        <dd>Default VEN URL (without the port number path). Used by CreatePartyRegistration (2.0b only) if set</dd>
+            <dd>Default VEN URL (without the port number path). Used by CreatePartyRegistration (2.0b only) if set</dd>
         <dt>VEN ID</dt>
-        <dd>Optional vendor ID. Useful for 2.0a VEN setups</dd>        
+            <dd>Optional vendor ID. Useful for 2.0a VEN setups</dd>
+        <dt>Remove oadrPayload/oadrSignedObject
+            <dd>The XML payload is normally wrapped by two outer XML envelopes, oadrPayload and oadrSignedObject, even when
+                 an xml signature is not provided. Checking this will send only the oadrPayload portion of the message. You may
+                 need to experiment with how your particular VTN requires non-signed payloads.
         <dt>Enable secure (SSL/TLS) connection</dt>
-        <dd>Configure secure connections to the VTN</dd>        
+            <dd>Configure secure connections to the VTN</dd>        
     </dl>
         <h3>Inputs</h3>
             <dl class="messge-properties">
