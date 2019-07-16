@@ -31,22 +31,22 @@
     }
   },
   "dependencies": {
-    "body-parser": "^1.18.3",
+    "body-parser": "^1.19.0",
     "data2xml": "^1.3.1",
     "debug": "^4.1.1",
-    "express": "^4.16.4",
-    "fast-xml-parser": "^3.12.12",
-    "jsonix": "^2.4.1",
-    "node-webcrypto-ossl": "^1.0.39",
+    "express": "^4.17.1",
+    "fast-xml-parser": "^3.12.17",
+    "jsonix": "^3.0.0",
+    "node-webcrypto-ossl": "^1.0.48",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "uuid": "^3.3.2",
     "xml-js": "^1.6.9",
-    "xmldsigjs": "^2.0.22"
+    "xmldsigjs": "^2.0.25"
   },
   "devDependencies": {
-    "eslint": "^5.12.1",
+    "eslint": "^6.0.1",
     "eslint-config-strongloop": "^2.1.0",
-    "eslint-plugin-node": "^8.0.1"
+    "eslint-plugin-node": "^9.1.0"
   }
 }
