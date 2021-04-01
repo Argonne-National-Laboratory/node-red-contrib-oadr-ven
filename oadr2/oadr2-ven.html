@@ -27,7 +27,9 @@
             venid: {value: "", required: false},
             pollrate: {value: "5", required: false},
             log: { value: false, required: true },
-            pathlog: {value: "", required: false}
+            pathlog: {value: "", required: false},
+            authuser: {value: "",required: false},
+            authpw: {value: "",required: false}
         },
         inputs: 1,
         outputs: 1,
@@ -93,7 +95,15 @@
         <label for="node-input-venid"><i class="fa fa-tag"></i> VEN ID</label>
         <input type="text" id="node-input-venid" placeholder="optional">
     </div>
-        
+    <div class="form-row">
+      <label for="node-input-authuser"><i class="fa fa-tag"></i> Username</label>
+      <input type="text" id="node-input-authuser">
+    </div>
+    <div class="form-row">
+      <label for="node-input-authpw"><i class="fa fa-tag"></i> Password</label>
+      <input type="password" id="node-input-authpw" placeholder="optional">
+    </div>
+      
     <div class="form-row">
         <input type="checkbox" id="node-input-usetls" style="display: inline-block; width: auto; vertical-align: top;">
         <label for="node-input-usetls" style="width: auto" data-i18n="httpin.use-tls">Enable secure (SSL/TLS) connection</label>
@@ -101,6 +111,7 @@
             <label style="width: auto; margin-left: 20px; margin-right: 10px;" for="node-input-tls"><span data-i18n="httpin.tls-config"></span></label><input type="text" style="width: 300px" id="node-input-tls">
         </div>
     </div>
+
     <div class="form-tips" id="tip-json" hidden><span data-i18n="httpin.tip.req"></span></div>
     
 </script>

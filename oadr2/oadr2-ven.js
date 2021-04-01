@@ -376,6 +376,8 @@ module.exports = function(RED) {
         },
         oadrProfileName: params.oadrProfileName || oadrProfile || '2.0b',
         oadrTransportName: 'simpleHttp',
+        oadrTransportAddress:
+          params.oadrTransportAddress || node.transportAddress || null,
         oadrReportOnly:
           typeof params.oadrReportOnly === 'boolean'
             ? params.oadrReportOnly
@@ -386,8 +388,6 @@ module.exports = function(RED) {
           typeof params.oadrHttpPullModel === 'boolean'
             ? params.oadrHttpPullModel
             : true,
-        oadrTransportAddress:
-          params.oadrTransportAddress || node.transportAddress || null,
       };
 
       let myXML = getXMLpayload(
