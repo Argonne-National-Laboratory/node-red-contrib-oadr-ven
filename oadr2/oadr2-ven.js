@@ -341,12 +341,14 @@ module.exports = function (RED) {
         node.url,
         "EiRegisterParty",
         myXML,
-        function (err, response, body) {
-          if (err) {
+        // function (err, response, body) {
+        function (response) {
+          // if (err) {
+          if (false) {
             // console.log('Error:', err);
             node.err("Error: " + err);
           } else {
-            let msg = prepareResMsg(uuid, inCmd, body);
+            let msg = prepareResMsg(uuid, inCmd, data);
 
             if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
               let oadrObj = msg.payload.data[msg.oadr.responseType];
