@@ -6,7 +6,10 @@ const express = require('express');
 // const fs = require('fs');
 const events = require('events');
 // const os = require('os');
-const request = require('request');
+// const request = require('request');
+
+const axios = require('axios');
+
 const bodyparser = require('body-parser');
 
 // for debugging purposes
@@ -179,9 +182,11 @@ module.exports = function(RED) {
       tlsNode.addTLSOptions(options);
     }
 
-    options.body = xml;
+    // options.body = xml;
+    options.data = xml;
 
-    request(options, cb);
+    // request(options, cb);
+    axios(options).then(cb);
   }
 
   /*
