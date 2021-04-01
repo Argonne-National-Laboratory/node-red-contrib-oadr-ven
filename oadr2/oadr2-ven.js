@@ -192,7 +192,12 @@ module.exports = function (RED) {
     options.data = xml;
 
     // request(options, cb);
-    axios(options).then(cb);
+    axios(options).then( 
+      function(response) {
+        debug(response.status);
+        debug(response.data);
+      };
+    );
   }
 
   /*
