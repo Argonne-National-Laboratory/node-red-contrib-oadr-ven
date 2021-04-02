@@ -318,7 +318,7 @@ module.exports = function (RED) {
     node.status({ fill: "green", shape: "ring", text: oadrProfile });
 
     // Initialize the ids for this VEN
-    flowContext.set(`${node.name}:IDs`, {
+    flowContext.set(`${node.name}:IDs`.replace(".", "_"), {
       registrationID: "",
       venID: node.venID || "",
       vtnID: "",
@@ -375,7 +375,7 @@ module.exports = function (RED) {
                 _ids.venID = ids.venID;
                 _ids.vtnID = ids.vtnID;
 
-                flowContext.set(`${node.name}:IDs`, ids);
+                flowContext.set(`${node.name}:IDs`.replace(".", "_"), ids);
               }
               // Include a parsed version of the polling frequency in the oadr info
               if (
@@ -398,7 +398,7 @@ module.exports = function (RED) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
-      let ids = flowContext.get(`${node.name}:IDs`);
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
 
       let oadrCreatePartyRegistration = {
         _attr: payloadAttr,
@@ -457,7 +457,7 @@ module.exports = function (RED) {
                 _ids.venID = ids.venID;
                 _ids.vtnID = ids.vtnID;
 
-                flowContext.set(`${node.name}:IDs`, ids);
+                flowContext.set(`${node.name}:IDs`.replace(".", "_"), ids);
               }
 
               // Include a parsed version of the polling frequency in the oadr info
@@ -482,7 +482,7 @@ module.exports = function (RED) {
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
 
-      let ids = flowContext.get(`${node.name}:IDs`);
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
 
       let oadrCancelPartyRegistration = {
         _attr: payloadAttr,
@@ -523,7 +523,7 @@ module.exports = function (RED) {
                 _ids.venID = ids.venID;
                 _ids.vtnID = ids.vtnID;
 
-                flowContext.set(`${node.name}:IDs`, ids);
+                flowContext.set(`${node.name}:IDs`.replace(".", "_"), ids);
               }
             }
 
@@ -538,7 +538,7 @@ module.exports = function (RED) {
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
 
-      let ids = flowContext.get(`${node.name}:IDs`);
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
 
       let venID = params.venID || "";
       if (ids) {
@@ -572,7 +572,7 @@ module.exports = function (RED) {
       let inCmd = params.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
       //console.log (params.requestID, uuid);
-      let ids = flowContext.get(`${node.name}:IDs`);
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
 
       let venID = params.venID || "";
       if (ids) {
@@ -642,7 +642,7 @@ module.exports = function (RED) {
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
 
-      let ids = flowContext.get(`${node.name}:IDs`);
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
 
       let venID = params.venID || "";
       if (ids) {
@@ -704,7 +704,7 @@ module.exports = function (RED) {
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID;
 
-      let ids = flowContext.get(`${node.name}:IDs`);
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
 
       let venID = params.venID || "";
       if (ids) {
@@ -764,7 +764,7 @@ module.exports = function (RED) {
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
 
-      let ids = flowContext.get(`${node.name}:IDs`);
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
 
       let venID = "";
       if (ids) {
