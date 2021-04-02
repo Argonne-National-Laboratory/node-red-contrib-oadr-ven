@@ -75,7 +75,7 @@
         <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
     </div>
     <div class="form-row">
-        <label for="node-input-url"><i class="fa fa-globe"></i> <span data-i18n="httpin.label.url"></span>URL</label>
+        <label for="node-input-url"><i class="fa fa-globe"></i> <span data-i18n="httpin.label.url"></span>VTN URL</label>
         <input id="node-input-url" type="text" placeholder="http://">
     </div>
     <div class="form-row">
@@ -86,12 +86,12 @@
         </select>
     </div>
     <div class="form-row">
-            <label for="node-input-pushport"><i class="fa fa-tag"></i> Push Port</label>
-            <input type="text" id="node-input-pushport">
-        </div>
+      <label for="node-input-pushurl"><i class="fa fa-globe"></i> Push URL</label>
+      <input type="text" id="node-input-pushurl">
+    </div>
     <div class="form-row">
-        <label for="node-input-pushurl"><i class="fa fa-tag"></i> Push URL</label>
-        <input type="text" id="node-input-pushurl">
+            <label for="node-input-pushport"><i class="fa fa-hashtag"></i> Push Port</label>
+            <input type="text" id="node-input-pushport">
     </div>
     <div class="form-row">
         <label for="node-input-venid"><i class="fa fa-tag"></i> VEN ID</label>
@@ -99,11 +99,11 @@
     </div>
     <h3>Authentication</h3>
     <div class="form-row">
-      <label for="node-input-authuser"><i class="fa fa-tag"></i> Username</label>
+      <label for="node-input-authuser"><i class="fa fa-user"></i> Username</label>
       <input type="text" id="node-input-authuser" placeholder="optional">
     </div>
     <div class="form-row">
-      <label for="node-input-authpw"><i class="fa fa-tag"></i> Password</label>
+      <label for="node-input-authpw"><i class="fa fa-lock"></i> Password</label>
       <input type="password" id="node-input-authpw" placeholder="optional">
     </div>
       
@@ -130,12 +130,16 @@
         <dd>The url of the VTN</dd>
         <dt>Profile</dt>
         <dd>The profile (2.0a or 2.0b) that this VEN is supporting</dd>        
-        <dt>Push Port</dt>
-        <dd>The port used for VTN push messages</dd>
         <dt>Push ULR</dt>
         <dd>Default VEN URL (without the port number path). Used by CreatePartyRegistration (2.0b only) if set</dd>
+        <dt>Push Port</dt>
+        <dd>The port used for VTN push messages</dd>
         <dt>VEN ID</dt>
         <dd>Optional vendor ID. Useful for 2.0a VEN setups</dd>        
+        <dt>Username</dt>
+        <dd>Optional username for basic authentication</dd>
+        <dt>Password</dt>
+        <dd>Optional password for basic authentication</dd>
         <dt>Enable secure (SSL/TLS) connection</dt>
         <dd>Configure secure connections to the VTN</dd>        
     </dl>
@@ -188,6 +192,7 @@
                 </li>
             </ul>
             <br/>
+            If the Ven Name contains a period, it will be converted to an underscore for the global context name. Therefore abcd.ven becomes abcd_ven in the context area.
         </p>
 
         <p>If push is enabled, the response to each incoming message has a lifespan timeout of 2 minutes, so any
