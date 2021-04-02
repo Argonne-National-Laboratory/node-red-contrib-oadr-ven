@@ -46,6 +46,8 @@ let _ids = {
 
 ee = new EventEmitter();
 
+debug.enable("anl:oadr");
+
 ////////////////////////////////////
 // Node-Red stuff
 ///////////////////////////////////
@@ -453,7 +455,7 @@ module.exports = function (RED) {
             // console.log('Error:', err);
             node.error("Error: " + err);
           } else {
-            console.log(body);
+            debug(body);
             let msg = prepareResMsg(uuid, inCmd, body);
 
             if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
