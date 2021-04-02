@@ -200,7 +200,7 @@ module.exports = function (RED) {
           }
         },
         function (error) {
-          if(done){
+          if (done) {
             // Node-RED 1.0 compatible
             done(error);
           } else {
@@ -313,8 +313,9 @@ module.exports = function (RED) {
       node.send(msg);
     });
 
-
-    const server = (isNaN(node.pushPort)? null : app.listen(node.pushPort, () => {});
+    const server = isNaN(node.pushPort)
+      ? null
+      : app.listen(node.pushPort, () => {});
 
     // make local copies of our configuration
     this.logging = typeof config.log === "boolean" ? config.log : false;
@@ -345,7 +346,7 @@ module.exports = function (RED) {
       payloadAttr["xmlns:xsd"] = "http://www.w3.org/2001/XMLSchema";
     }
 
-    const QueryRegistration = function (msg,done) {
+    const QueryRegistration = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -402,7 +403,7 @@ module.exports = function (RED) {
       );
     };
 
-    const CreatePartyRegistration = function (msg,done) {
+    const CreatePartyRegistration = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -481,7 +482,8 @@ module.exports = function (RED) {
 
             node.send(msg);
           }
-        },done
+        },
+        done
       );
     };
 
@@ -941,10 +943,10 @@ module.exports = function (RED) {
         if (opType === "request" && msg.payload.requestType) {
           switch (msg.payload.requestType) {
             case "QueryRegistration":
-              QueryRegistration(msg,done);
+              QueryRegistration(msg, done);
               break;
             case "CreatePartyRegistration":
-              CreatePartyRegistration(msg,done);
+              CreatePartyRegistration(msg, done);
               break;
             case "CancelPartyRegistration":
               CancelPartyRegistration(msg);
