@@ -217,12 +217,31 @@ module.exports = function (RED) {
       .catch(function (error) {
         if (error.response) {
           debug("REQUEST ERROR STATUS: %s", error.response.status);
-          debug("REQUEST ERROR STATUS: %s", error.response.data);
-          debug("REQUEST ERROR HEADERS: %s", error.response.headers);
+          debug("REQUEST ERROR DATA: %s", error.response.data);
+          if (done) {
+            done(
+              `OADR Req Err: ${error.response.status}\n${error.response.data}`
+            );
+          } else {
+            node.error(
+              `OADR Req Err: ${error.response.status}`,
+              error.response.data
+            );
+          }
         } else if (error.request) {
           debug(error.request);
+          if (done) {
+            done(`OADR Req Err: ${error.request}`);
+          } else {
+            node.error("OADR Req Err:", error.request);
+          }
         } else {
           debug("ERROR %s", error.message);
+          if (done) {
+            done("Error: ${error.message}");
+          } else {
+            node.error(" Error:", error.message);
+          }
         }
       });
   }
