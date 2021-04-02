@@ -219,8 +219,8 @@ module.exports = function (RED) {
       tlsNode = RED.nodes.getNode(config.tls);
     }
 
-    authuser = config.authuser || "";
-    authpw = config.authpw || "";
+    authuser = this.credentials.authuser || "";
+    authpw = this.credentials.authpw || "";
 
     oadrProfile = config.profile || "2.0b";
 
@@ -1016,5 +1016,7 @@ module.exports = function (RED) {
     // }
   }
 
-  RED.nodes.registerType("VEN", OADR2VEN);
+  RED.nodes.registerType("VEN", OADR2VEN, {
+    credentials: { authuser: { type: "text" }, authpw: { type: "password" } },
+  });
 };
