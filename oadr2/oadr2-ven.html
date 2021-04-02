@@ -27,11 +27,11 @@
             venid: {value: "", required: false},
             pollrate: {value: "5", required: false},
             log: { value: false, required: true },
-            pathlog: {value: "", required: false},
-            credentials: {
-              authuser: {value: "",required: false},
-              authpw: {value: "",required: false}
-            }
+            pathlog: {value: "", required: false}
+        },
+        credentials: {
+            authuser: {type: "text"},
+            authpw: {type: "password"}
         },
         inputs: 1,
         outputs: 1,
@@ -99,7 +99,7 @@
     </div>
     <div class="form-row">
       <label for="node-input-authuser"><i class="fa fa-tag"></i> Username</label>
-      <input type="text" id="node-input-authuser">
+      <input type="text" id="node-input-authuser" placeholder="optional">
     </div>
     <div class="form-row">
       <label for="node-input-authpw"><i class="fa fa-tag"></i> Password</label>
