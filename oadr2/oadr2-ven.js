@@ -13,7 +13,8 @@ const axios = require("axios");
 const bodyparser = require("body-parser");
 
 // for debugging purposes
-const debug = require("debug")("anl:oadr");
+const db = require("debug");
+const debug = db("anl:oadr");
 
 // this is used to create unique IDs (if not provided)
 const uuidv4 = require("uuid/v4");
@@ -46,7 +47,7 @@ let _ids = {
 
 ee = new EventEmitter();
 
-debug.enable("anl:oadr");
+db.enable("anl:oadr");
 
 ////////////////////////////////////
 // Node-Red stuff
