@@ -22,7 +22,7 @@
             url: {value:"",validate:function(v) { return (v.trim().length === 0) || (v.indexOf("://") === -1) || (v.trim().indexOf("http") === 0)} },
             tls: {type:"tls-config",required: false},
             profile: { value: "2.0b", required: true},
-            pushport: { value: 80, required: false, validate:function(v) { return (v.trim().length === 0) || (v.indexOf("://") === -1) || (v.trim().indexOf("http") === 0)} },
+            pushport: { value: 80, required: false, validate:RED.validators.number() },
             pushurl: {value: "", required: false},
             venid: {value: "", required: false},
             pollrate: {value: "5", required: false},
