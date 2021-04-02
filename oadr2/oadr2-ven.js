@@ -399,40 +399,34 @@ module.exports = function (RED) {
         myXML,
         // function (err, response, body) {
         function (response) {
-          // if (err) {
-          if (false) {
-            // console.log('Error:', err);
-            node.err("Error: " + err);
-          } else {
-            let msg = prepareResMsg(uuid, inCmd, data);
+          let msg = prepareResMsg(uuid, inCmd, data);
 
-            if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
-              let oadrObj = msg.payload.data[msg.oadr.responseType];
-              if (oadrObj.eiResponse.responseCode === 200) {
-                let ids = {
-                  registrationID: oadrObj.registrationID || "",
-                  venID: oadrObj.venID || node.venID || "",
-                  vtnID: oadrObj.vtnID || "",
-                };
-                _ids.registrationID = ids.registrationID;
-                _ids.venID = ids.venID;
-                _ids.vtnID = ids.vtnID;
+          if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
+            let oadrObj = msg.payload.data[msg.oadr.responseType];
+            if (oadrObj.eiResponse.responseCode === 200) {
+              let ids = {
+                registrationID: oadrObj.registrationID || "",
+                venID: oadrObj.venID || node.venID || "",
+                vtnID: oadrObj.vtnID || "",
+              };
+              _ids.registrationID = ids.registrationID;
+              _ids.venID = ids.venID;
+              _ids.vtnID = ids.vtnID;
 
-                flowContext.set(`${node.name}:IDs`.replace(".", "_"), ids);
-              }
-              // Include a parsed version of the polling frequency in the oadr info
-              if (
-                oadrObj.oadrRequestedOadrPollFreq &&
-                oadrObj.oadrRequestedOadrPollFreq.duration
-              ) {
-                msg.oadr.pollFreqSeconds = iCalDurationInSeconds(
-                  oadrObj.oadrRequestedOadrPollFreq.duration
-                );
-              }
+              flowContext.set(`${node.name}:IDs`.replace(".", "_"), ids);
             }
-
-            node.send(msg);
+            // Include a parsed version of the polling frequency in the oadr info
+            if (
+              oadrObj.oadrRequestedOadrPollFreq &&
+              oadrObj.oadrRequestedOadrPollFreq.duration
+            ) {
+              msg.oadr.pollFreqSeconds = iCalDurationInSeconds(
+                oadrObj.oadrRequestedOadrPollFreq.duration
+              );
+            }
           }
+
+          node.send(msg);
         },
         done
       );
@@ -481,42 +475,35 @@ module.exports = function (RED) {
         myXML,
         // function (err, response, body) {
         function (body) {
-          let err;
-          if (false) {
-            // console.log('Error:', err);
-            node.error("Error: " + err);
-          } else {
-            debug(body);
-            let msg = prepareResMsg(uuid, inCmd, body);
+          debug(body);
+          let msg = prepareResMsg(uuid, inCmd, body);
 
-            if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
-              let oadrObj = msg.payload.data[msg.oadr.responseType];
-              if (oadrObj.eiResponse.responseCode === 200) {
-                let ids = {
-                  registrationID: oadrObj.registrationID || "",
-                  venID: oadrObj.venID || "",
-                  vtnID: oadrObj.vtnID || "",
-                };
-                _ids.registrationID = ids.registrationID;
-                _ids.venID = ids.venID;
-                _ids.vtnID = ids.vtnID;
+          if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
+            let oadrObj = msg.payload.data[msg.oadr.responseType];
+            if (oadrObj.eiResponse.responseCode === 200) {
+              let ids = {
+                registrationID: oadrObj.registrationID || "",
+                venID: oadrObj.venID || "",
+                vtnID: oadrObj.vtnID || "",
+              };
+              _ids.registrationID = ids.registrationID;
+              _ids.venID = ids.venID;
+              _ids.vtnID = ids.vtnID;
 
-                flowContext.set(`${node.name}:IDs`.replace(".", "_"), ids);
-              }
-
-              // Include a parsed version of the polling frequency in the oadr info
-              if (
-                oadrObj.oadrRequestedOadrPollFreq &&
-                oadrObj.oadrRequestedOadrPollFreq.duration
-              ) {
-                msg.oadr.pollFreqSeconds = iCalDurationInSeconds(
-                  oadrObj.oadrRequestedOadrPollFreq.duration
-                );
-              }
+              flowContext.set(`${node.name}:IDs`.replace(".", "_"), ids);
             }
 
-            node.send(msg);
+            // Include a parsed version of the polling frequency in the oadr info
+            if (
+              oadrObj.oadrRequestedOadrPollFreq &&
+              oadrObj.oadrRequestedOadrPollFreq.duration
+            ) {
+              msg.oadr.pollFreqSeconds = iCalDurationInSeconds(
+                oadrObj.oadrRequestedOadrPollFreq.duration
+              );
+            }
           }
+          node.send(msg);
         },
         done
       );
@@ -549,31 +536,25 @@ module.exports = function (RED) {
         node.url,
         "EiRegisterParty",
         myXML,
-        function (err, response, body) {
-          if (err) {
-            // console.log('Error:', err);
-            node.err("Error: " + err);
-          } else {
-            let msg = prepareResMsg(uuid, inCmd, body);
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
 
-            if (msg.oadr.responseType == "oadrCanceledPartyRegistration") {
-              let oadrObj = msg.payload.data[msg.oadr.responseType];
-              if (oadrObj.eiResponse.responseCode === 200) {
-                let ids = {
-                  registrationID: "",
-                  venID: "",
-                  vtnID: "",
-                };
-                _ids.registrationID = ids.registrationID;
-                _ids.venID = ids.venID;
-                _ids.vtnID = ids.vtnID;
+          if (msg.oadr.responseType == "oadrCanceledPartyRegistration") {
+            let oadrObj = msg.payload.data[msg.oadr.responseType];
+            if (oadrObj.eiResponse.responseCode === 200) {
+              let ids = {
+                registrationID: "",
+                venID: "",
+                vtnID: "",
+              };
+              _ids.registrationID = ids.registrationID;
+              _ids.venID = ids.venID;
+              _ids.vtnID = ids.vtnID;
 
-                flowContext.set(`${node.name}:IDs`.replace(".", "_"), ids);
-              }
+              flowContext.set(`${node.name}:IDs`.replace(".", "_"), ids);
             }
-
-            node.send(msg);
           }
+          node.send(msg);
         },
         done
       );
@@ -605,15 +586,9 @@ module.exports = function (RED) {
         node.url,
         "EiEvent",
         myXML,
-        function (err, response, body) {
-          if (err) {
-            // ('Error:', err);
-            node.error("Error: " + err);
-          } else {
-            //console.log(body);
-            let msg = prepareResMsg(uuid, inCmd, body);
-            node.send(msg);
-          }
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
         },
         done
       );
@@ -682,14 +657,9 @@ module.exports = function (RED) {
         node.url,
         "EiEvent",
         myXML,
-        function (err, response, body) {
-          if (err) {
-            // console.log('Error:', err);
-            node.error("Error: " + err);
-          } else {
-            let msg = prepareResMsg(uuid, inCmd, body);
-            node.send(msg);
-          }
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
         },
         done
       );
@@ -750,14 +720,9 @@ module.exports = function (RED) {
         node.url,
         "EiReport",
         myXML,
-        function (err, response, body) {
-          if (err) {
-            // console.log('Error:', err);
-            node.error("Error: " + err);
-          } else {
-            let msg = prepareResMsg(uuid, inCmd, body);
-            node.send(msg);
-          }
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
         },
         done
       );
@@ -791,14 +756,9 @@ module.exports = function (RED) {
         node.url,
         "EiReport",
         myXML,
-        function (err, response, body) {
-          if (err) {
-            // console.log('Error:', err);
-            node.error("Error: " + err);
-          } else {
-            let msg = prepareResMsg(uuid, inCmd, body);
-            node.send(msg);
-          }
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
         },
         done
       );
@@ -822,14 +782,9 @@ module.exports = function (RED) {
         node.url,
         "EiReport",
         myXML,
-        function (err, response, body) {
-          if (err) {
-            // console.log('Error:', err);
-            node.error("Error: " + err);
-          } else {
-            let msg = prepareResMsg(uuid, inCmd, body);
-            node.send(msg);
-          }
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
         },
         done
       );
@@ -858,14 +813,9 @@ module.exports = function (RED) {
         node.url,
         "OadrPoll",
         myXML,
-        function (err, response, body) {
-          if (err) {
-            // console.log('Error:', err);
-            node.error("Error: " + err);
-          } else {
-            let msg = prepareResMsg(uuid, inCmd, body);
-            node.send(msg);
-          }
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
         },
         done
       );
@@ -962,14 +912,9 @@ module.exports = function (RED) {
 
       let myXML = getXMLpayload("oadrCreateOpt", oadrCreateOpt);
 
-      sendRequest(node.url, "EiOpt", myXML, function (err, response, body) {
-        if (err) {
-          // console.log('Error:', err);
-          node.error("Error: " + err);
-        } else {
-          let msg = prepareResMsg(uuid, inCmd, body);
-          node.send(msg);
-        }
+      sendRequest(node.url, "EiOpt", myXML, function (body) {
+        let msg = prepareResMsg(uuid, inCmd, body);
+        node.send(msg);
       });
     };
 
@@ -994,14 +939,9 @@ module.exports = function (RED) {
         node.url,
         "EiOpt",
         myXML,
-        function (err, response, body) {
-          if (err) {
-            // console.log('Error:', err);
-            node.error("Error: " + err);
-          } else {
-            let msg = prepareResMsg(uuid, inCmd, body);
-            node.send(msg);
-          }
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          node.send(msg);
         },
         done
       );
