@@ -544,7 +544,7 @@ module.exports = function (RED) {
             if (oadrObj.eiResponse.responseCode === 200) {
               let ids = {
                 registrationID: "",
-                venID: "",
+                venID: node.venID || "",
                 vtnID: "",
               };
               _ids.registrationID = ids.registrationID;
