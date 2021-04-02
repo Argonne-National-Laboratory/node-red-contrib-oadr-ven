@@ -398,6 +398,7 @@ module.exports = function (RED) {
         "pyld:requestID": {
           _value: uuid,
         },
+        "ei:venID": params.venID || ids.venID || "",
         oadrProfileName: params.oadrProfileName || oadrProfile || "2.0b",
         oadrTransportName: "simpleHttp",
         oadrTransportAddress:
@@ -413,6 +414,10 @@ module.exports = function (RED) {
             ? params.oadrHttpPullModel
             : true,
       };
+
+      if (oadrCreatePartyRegistration["ei:venID"] === "") {
+        delete oadrCreatePartyRegistration["ei:venID"];
+      }
 
       let myXML = getXMLpayload(
         "oadrCreatePartyRegistration",
