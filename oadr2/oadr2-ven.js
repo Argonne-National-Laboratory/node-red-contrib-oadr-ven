@@ -440,6 +440,7 @@ module.exports = function (RED) {
             // console.log('Error:', err);
             node.error("Error: " + err);
           } else {
+            console.log(body);
             let msg = prepareResMsg(uuid, inCmd, body);
 
             if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
