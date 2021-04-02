@@ -199,22 +199,31 @@ module.exports = function (RED) {
     axios(options)
       .then(
         function (response) {
-          if (response.status == 200) {
+          if (response.status >= 200 && response.status < 300) {
             cb(response.data);
           }
-        },
-        function (error) {
-          debug("ERROR: %s", error);
-          if (done) {
-            // Node-RED 1.0 compatible
-            done(error);
-          } else {
-            node.error(error, msg);
-          }
         }
+        // ,
+        // function (error) {
+        //   debug("ERROR: %s", error);
+        //   if (done) {
+        //     // Node-RED 1.0 compatible
+        //     done(error);
+        //   } else {
+        //     node.error(error, msg);
+        //   }
+        // }
       )
       .catch(function (error) {
-        console.log(error);
+        if (error.response) {
+          debug("REQUEST ERROR STATUS: %s", error.response.status);
+          debug("REQUEST ERROR STATUS: %s", error.response.data);
+          debug("REQUEST ERROR HEADERS: %s", error.response.headers);
+        } else if (error.request) {
+          debug(error.request);
+        } else {
+          debug("ERROR %s", error.message);
+        }
       });
   }
 
