@@ -489,7 +489,7 @@ module.exports = function (RED) {
       );
     };
 
-    const CancelPartyRegistration = function (msg) {
+    const CancelPartyRegistration = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -541,11 +541,12 @@ module.exports = function (RED) {
 
             node.send(msg);
           }
-        }
+        },
+        done
       );
     };
 
-    const RequestEvent = function (msg) {
+    const RequestEvent = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -567,19 +568,25 @@ module.exports = function (RED) {
 
       let myXML = getXMLpayload("oadrRequestEvent", oadrRequestEvent);
 
-      sendRequest(node.url, "EiEvent", myXML, function (err, response, body) {
-        if (err) {
-          // ('Error:', err);
-          node.error("Error: " + err);
-        } else {
-          //console.log(body);
-          let msg = prepareResMsg(uuid, inCmd, body);
-          node.send(msg);
-        }
-      });
+      sendRequest(
+        node.url,
+        "EiEvent",
+        myXML,
+        function (err, response, body) {
+          if (err) {
+            // ('Error:', err);
+            node.error("Error: " + err);
+          } else {
+            //console.log(body);
+            let msg = prepareResMsg(uuid, inCmd, body);
+            node.send(msg);
+          }
+        },
+        done
+      );
     };
 
-    const CreatedEvent = function (msg) {
+    const CreatedEvent = function (msg, done) {
       const params = msg.payload;
       let inCmd = params.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -638,18 +645,24 @@ module.exports = function (RED) {
       let myXML = getXMLpayload("oadrCreatedEvent", oadrCreatedEvent);
       // console.log(myXML);
 
-      sendRequest(node.url, "EiEvent", myXML, function (err, response, body) {
-        if (err) {
-          // console.log('Error:', err);
-          node.error("Error: " + err);
-        } else {
-          let msg = prepareResMsg(uuid, inCmd, body);
-          node.send(msg);
-        }
-      });
+      sendRequest(
+        node.url,
+        "EiEvent",
+        myXML,
+        function (err, response, body) {
+          if (err) {
+            // console.log('Error:', err);
+            node.error("Error: " + err);
+          } else {
+            let msg = prepareResMsg(uuid, inCmd, body);
+            node.send(msg);
+          }
+        },
+        done
+      );
     };
 
-    const RegisterReport = function (msg) {
+    const RegisterReport = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -700,18 +713,24 @@ module.exports = function (RED) {
 
       // console.log(myXML);
 
-      sendRequest(node.url, "EiReport", myXML, function (err, response, body) {
-        if (err) {
-          // console.log('Error:', err);
-          node.error("Error: " + err);
-        } else {
-          let msg = prepareResMsg(uuid, inCmd, body);
-          node.send(msg);
-        }
-      });
+      sendRequest(
+        node.url,
+        "EiReport",
+        myXML,
+        function (err, response, body) {
+          if (err) {
+            // console.log('Error:', err);
+            node.error("Error: " + err);
+          } else {
+            let msg = prepareResMsg(uuid, inCmd, body);
+            node.send(msg);
+          }
+        },
+        done
+      );
     };
 
-    const RegisteredReport = function (msg) {
+    const RegisteredReport = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID;
@@ -735,18 +754,24 @@ module.exports = function (RED) {
 
       let myXML = getXMLpayload("oadrRegisteredReport", oadrRegisteredReport);
 
-      sendRequest(node.url, "EiReport", myXML, function (err, response, body) {
-        if (err) {
-          // console.log('Error:', err);
-          node.error("Error: " + err);
-        } else {
-          let msg = prepareResMsg(uuid, inCmd, body);
-          node.send(msg);
-        }
-      });
+      sendRequest(
+        node.url,
+        "EiReport",
+        myXML,
+        function (err, response, body) {
+          if (err) {
+            // console.log('Error:', err);
+            node.error("Error: " + err);
+          } else {
+            let msg = prepareResMsg(uuid, inCmd, body);
+            node.send(msg);
+          }
+        },
+        done
+      );
     };
 
-    const UpdateReport = function (msg) {
+    const UpdateReport = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -760,18 +785,24 @@ module.exports = function (RED) {
 
       let myXML = getXMLpayload("oadrUpdateReport", oadrUpdateReport);
 
-      sendRequest(node.url, "EiReport", myXML, function (err, response, body) {
-        if (err) {
-          // console.log('Error:', err);
-          node.error("Error: " + err);
-        } else {
-          let msg = prepareResMsg(uuid, inCmd, body);
-          node.send(msg);
-        }
-      });
+      sendRequest(
+        node.url,
+        "EiReport",
+        myXML,
+        function (err, response, body) {
+          if (err) {
+            // console.log('Error:', err);
+            node.error("Error: " + err);
+          } else {
+            let msg = prepareResMsg(uuid, inCmd, body);
+            node.send(msg);
+          }
+        },
+        done
+      );
     };
 
-    const Poll = function (msg) {
+    const Poll = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -790,18 +821,24 @@ module.exports = function (RED) {
 
       let myXML = getXMLpayload("oadrPoll", oadrPoll);
 
-      sendRequest(node.url, "OadrPoll", myXML, function (err, response, body) {
-        if (err) {
-          // console.log('Error:', err);
-          node.error("Error: " + err);
-        } else {
-          let msg = prepareResMsg(uuid, inCmd, body);
-          node.send(msg);
-        }
-      });
+      sendRequest(
+        node.url,
+        "OadrPoll",
+        myXML,
+        function (err, response, body) {
+          if (err) {
+            // console.log('Error:', err);
+            node.error("Error: " + err);
+          } else {
+            let msg = prepareResMsg(uuid, inCmd, body);
+            node.send(msg);
+          }
+        },
+        done
+      );
     };
 
-    const Response = function (msg) {
+    const Response = function (msg, done) {
       let params = msg.payload;
 
       let oadrResponse = {
@@ -822,7 +859,7 @@ module.exports = function (RED) {
       ee.emit(params.requestID, myXML);
     };
 
-    const CreateOpt = function (msg) {
+    const CreateOpt = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -903,7 +940,7 @@ module.exports = function (RED) {
       });
     };
 
-    const CancelOpt = function (msg) {
+    const CancelOpt = function (msg, done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -920,15 +957,21 @@ module.exports = function (RED) {
 
       let myXML = getXMLpayload("oadrCancelOpt", oadrCancelOpt);
 
-      sendRequest(node.url, "EiOpt", myXML, function (err, response, body) {
-        if (err) {
-          // console.log('Error:', err);
-          node.error("Error: " + err);
-        } else {
-          let msg = prepareResMsg(uuid, inCmd, body);
-          node.send(msg);
-        }
-      });
+      sendRequest(
+        node.url,
+        "EiOpt",
+        myXML,
+        function (err, response, body) {
+          if (err) {
+            // console.log('Error:', err);
+            node.error("Error: " + err);
+          } else {
+            let msg = prepareResMsg(uuid, inCmd, body);
+            node.send(msg);
+          }
+        },
+        done
+      );
     };
 
     this.on("input", function (msg, send, done) {
@@ -951,31 +994,31 @@ module.exports = function (RED) {
               CreatePartyRegistration(msg, done);
               break;
             case "CancelPartyRegistration":
-              CancelPartyRegistration(msg);
+              CancelPartyRegistration(msg, done);
               break;
             case "RequestEvent":
-              RequestEvent(msg);
+              RequestEvent(msg, done);
               break;
             case "RegisterReport":
-              RegisterReport(msg);
+              RegisterReport(msg.done);
               break;
             case "RegisteredReport":
-              RegisteredReport(msg);
+              RegisteredReport(msg, done);
               break;
             case "UpdateReport":
-              UpdateReport(msg);
+              UpdateReport(msg, done);
               break;
             case "Poll":
-              Poll(msg);
+              Poll(msg, done);
               break;
             case "CreatedEvent":
-              CreatedEvent(msg);
+              CreatedEvent(msg, done);
               break;
             case "CreateOpt":
-              CreateOpt(msg);
+              CreateOpt(msg, done);
               break;
             case "CancelOpt":
-              CancelOpt(msg);
+              CancelOpt(msg, done);
               break;
           }
         } else {
@@ -983,7 +1026,7 @@ module.exports = function (RED) {
           switch (msg.payload.responseType) {
             case "Response":
               //console.log('doing a Response');
-              Response(msg);
+              Response(msg, done);
               break;
           }
         }
