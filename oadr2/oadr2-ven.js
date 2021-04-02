@@ -313,9 +313,11 @@ module.exports = function (RED) {
       node.send(msg);
     });
 
-    const server = isNaN(node.pushPort)
-      ? null
-      : app.listen(node.pushPort, () => {});
+    const server = null;
+
+    // isNaN(node.pushPort)
+    //   ? null
+    //   : app.listen(node.pushPort, () => {});
 
     // make local copies of our configuration
     this.logging = typeof config.log === "boolean" ? config.log : false;
