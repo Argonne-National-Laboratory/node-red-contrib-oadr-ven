@@ -48,7 +48,7 @@ let _ids = {
 ee = new EventEmitter();
 
 // Only use for debugging via docker instance. Otherwise use env DEBUG="anl:oadr" when starting Node-Red
-db.enable("anl:oadr");
+//db.enable("anl:oadr");
 
 ////////////////////////////////////
 // Node-Red stuff
