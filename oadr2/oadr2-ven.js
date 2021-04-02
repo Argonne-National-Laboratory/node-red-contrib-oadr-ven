@@ -392,6 +392,7 @@ module.exports = function (RED) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
+      let ids = flowContext.get(`${node.name}:IDs`);
 
       let oadrCreatePartyRegistration = {
         _attr: payloadAttr,
