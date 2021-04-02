@@ -195,7 +195,9 @@ module.exports = function (RED) {
     axios(options)
       .then(
         function (response) {
-          cb(response);
+          if (response.status == 200) {
+            cb(response.data);
+          }
         },
         function (error) {
           console.log(error);
