@@ -193,10 +193,14 @@ module.exports = function (RED) {
 
     // request(options, cb);
     axios(options)
-      .then(function (response) {
-        console.log(response.status);
-        console.log(response.data);
-      })
+      .then(
+        function (response) {
+          cb(response);
+        },
+        function (error) {
+          console.log(error);
+        }
+      )
       .catch(function (error) {
         console.log(error);
       });
