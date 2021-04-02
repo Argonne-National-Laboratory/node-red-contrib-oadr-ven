@@ -158,7 +158,7 @@ module.exports = function (RED) {
     return returnPayload;
   }
 
-  function sendRequest(url, ei, xml, cb) {
+  function sendRequest(url, ei, xml, cb, done) {
     if (!(url.indexOf("http://") === 0 || url.indexOf("https://") === 0)) {
       if (tlsNode) {
         url = "https://" + url;
@@ -200,7 +200,12 @@ module.exports = function (RED) {
           }
         },
         function (error) {
-          console.log(error);
+          if(done){
+            // Node-RED 1.0 compatible
+            done(error);
+          } else {
+            node.error(error, msg);
+          }
         }
       )
       .catch(function (error) {
@@ -230,6 +235,7 @@ module.exports = function (RED) {
     this.transportAddress = "";
     if (config.pushurl) {
       let port = node.pushPort || "8181";
+      node.pushport = port;
       this.transportAddress = `${config.pushurl}:${port}`;
     }
 
@@ -307,7 +313,8 @@ module.exports = function (RED) {
       node.send(msg);
     });
 
-    const server = app.listen(node.pushPort, () => {});
+
+    const server = (isNaN(node.pushPort)? null : app.listen(node.pushPort, () => {});
 
     // make local copies of our configuration
     this.logging = typeof config.log === "boolean" ? config.log : false;
@@ -338,7 +345,7 @@ module.exports = function (RED) {
       payloadAttr["xmlns:xsd"] = "http://www.w3.org/2001/XMLSchema";
     }
 
-    const QueryRegistration = function (msg) {
+    const QueryRegistration = function (msg,done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -390,11 +397,12 @@ module.exports = function (RED) {
 
             node.send(msg);
           }
-        }
+        },
+        done
       );
     };
 
-    const CreatePartyRegistration = function (msg) {
+    const CreatePartyRegistration = function (msg,done) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
@@ -473,7 +481,7 @@ module.exports = function (RED) {
 
             node.send(msg);
           }
-        }
+        },done
       );
     };
 
@@ -919,7 +927,7 @@ module.exports = function (RED) {
       });
     };
 
-    this.on("input", function (msg) {
+    this.on("input", function (msg, send, done) {
       let opType = "request";
 
       if (msg.payload) {
@@ -933,10 +941,10 @@ module.exports = function (RED) {
         if (opType === "request" && msg.payload.requestType) {
           switch (msg.payload.requestType) {
             case "QueryRegistration":
-              QueryRegistration(msg);
+              QueryRegistration(msg,done);
               break;
             case "CreatePartyRegistration":
-              CreatePartyRegistration(msg);
+              CreatePartyRegistration(msg,done);
               break;
             case "CancelPartyRegistration":
               CancelPartyRegistration(msg);
