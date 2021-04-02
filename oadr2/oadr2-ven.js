@@ -433,8 +433,10 @@ module.exports = function (RED) {
         node.url,
         "EiRegisterParty",
         myXML,
-        function (err, response, body) {
-          if (err) {
+        // function (err, response, body) {
+        function (body) {
+          let err;
+          if (false) {
             // console.log('Error:', err);
             node.error("Error: " + err);
           } else {
