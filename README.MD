@@ -34,17 +34,17 @@ For 2.0b setups, the OADR2 VEN node also attempts to track the `venID` for you u
 
 OADR2_VEN support the following commands:
 * [QueryRegistration](#queryregistration)
-* [CreatePartyRegistration](createpartyregistration)
+* [CreatePartyRegistration](#createpartyregistration)
 * [CancelPartyRegistration](#cancelpartyregistration)
-* [RequestEvent](*requestevent)
-* [CreatedEvent](*createdevent)
-* [RegisterReport](*registerreport)
-* [RegisteredReport](*registeredreport)
-* [Poll](*poll)
-* [Response](*response)
-* [CreateOpt](*createopt)
-* [CancelOpt](*cancelopt)
-* [UpdateReport](*updatereport)
+* [RequestEvent](#requestevent)
+* [CreatedEvent](#createdevent)
+* [RegisterReport](#registerreport)
+* [RegisteredReport](#registeredreport)
+* [Poll](#poll)
+* [Response](#response)
+* [CreateOpt](#createopt)
+* [CancelOpt](#cancelopt)
+* [UpdateReport](#updatereport)
 
 ### `QueryRegistration`
 * `requestID`
