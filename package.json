@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "mon": "nodemon -x node-red"
   },
-  "author": "Bryan Nystrom <bnystrom@gmail.com> (https://github.com/bnystrom)",
+  "author": "Bryan Nystrom <bnystrom@anl.gov> (https://github.com/bnystrom)",
   "license": "BSD-3-Clause",
   "publishConfig": {
     "access": "public"

@@ -1,3 +1,10 @@
+// 
+// Title: Node-Red-Contrib-OADR-Ven
+// Author: Bryan Nystrom
+// Company: Argonne National Laboratory
+//
+
+
 /* eslint-disable radix */
 "use strict";
 
@@ -391,12 +398,12 @@ module.exports = function (RED) {
         "pyld:requestID": uuid,
       };
 
-      let myXML = getXMLpayload("oadrQueryRegistration", oadrQueryRegistration);
+      let XMLpayload = getXMLpayload("oadrQueryRegistration", oadrQueryRegistration);
 
       sendRequest(
         node.url,
         "EiRegisterParty",
-        myXML,
+        XMLpayload,
         // function (err, response, body) {
         function (response) {
           let msg = prepareResMsg(uuid, inCmd, data);
@@ -464,7 +471,7 @@ module.exports = function (RED) {
         delete oadrCreatePartyRegistration["ei:venID"];
       }
 
-      let myXML = getXMLpayload(
+      let XMLpayload = getXMLpayload(
         "oadrCreatePartyRegistration",
         oadrCreatePartyRegistration
       );
@@ -472,7 +479,7 @@ module.exports = function (RED) {
       sendRequest(
         node.url,
         "EiRegisterParty",
-        myXML,
+        XMLpayload,
         // function (err, response, body) {
         function (body) {
           debug(body);
@@ -527,7 +534,7 @@ module.exports = function (RED) {
         "ei:venID": params.venID || ids.venID || "",
       };
 
-      let myXML = getXMLpayload(
+      let XMLpayload = getXMLpayload(
         "oadrCancelPartyRegistration",
         oadrCancelPartyRegistration
       );
@@ -535,7 +542,7 @@ module.exports = function (RED) {
       sendRequest(
         node.url,
         "EiRegisterParty",
-        myXML,
+        XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
 
@@ -580,12 +587,12 @@ module.exports = function (RED) {
         },
       };
 
-      let myXML = getXMLpayload("oadrRequestEvent", oadrRequestEvent);
+      let XMLpayload = getXMLpayload("oadrRequestEvent", oadrRequestEvent);
 
       sendRequest(
         node.url,
         "EiEvent",
-        myXML,
+        XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
           node.send(msg);
@@ -650,13 +657,13 @@ module.exports = function (RED) {
 
       //console.log(oadrCreatedEvent);
 
-      let myXML = getXMLpayload("oadrCreatedEvent", oadrCreatedEvent);
-      // console.log(myXML);
+      let XMLpayload = getXMLpayload("oadrCreatedEvent", oadrCreatedEvent);
+      // console.log(XMLpayload);
 
       sendRequest(
         node.url,
         "EiEvent",
-        myXML,
+        XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
           node.send(msg);
@@ -712,14 +719,14 @@ module.exports = function (RED) {
         "ei:venID": params.venID || _ids.venID || venID,
       };
 
-      let myXML = getXMLpayload("oadrRegisterReport", oadrRegisterReport);
+      let XMLpayload = getXMLpayload("oadrRegisterReport", oadrRegisterReport);
 
-      // console.log(myXML);
+      // console.log(XMLpayload);
 
       sendRequest(
         node.url,
         "EiReport",
-        myXML,
+        XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
           node.send(msg);
@@ -750,12 +757,12 @@ module.exports = function (RED) {
         "ei:venID": params.venID || _ids.venID || venID,
       };
 
-      let myXML = getXMLpayload("oadrRegisteredReport", oadrRegisteredReport);
+      let XMLpayload = getXMLpayload("oadrRegisteredReport", oadrRegisteredReport);
 
       sendRequest(
         node.url,
         "EiReport",
-        myXML,
+        XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
           node.send(msg);
@@ -776,12 +783,12 @@ module.exports = function (RED) {
         },
       };
 
-      let myXML = getXMLpayload("oadrUpdateReport", oadrUpdateReport);
+      let XMLpayload = getXMLpayload("oadrUpdateReport", oadrUpdateReport);
 
       sendRequest(
         node.url,
         "EiReport",
-        myXML,
+        XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
           node.send(msg);
@@ -807,12 +814,12 @@ module.exports = function (RED) {
         "ei:venID": params.venID || _ids.venID || venID,
       };
 
-      let myXML = getXMLpayload("oadrPoll", oadrPoll);
+      let XMLpayload = getXMLpayload("oadrPoll", oadrPoll);
 
       sendRequest(
         node.url,
         "OadrPoll",
-        myXML,
+        XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
           node.send(msg);
@@ -837,9 +844,9 @@ module.exports = function (RED) {
         oadrResponse.venID = params.venID;
       }
 
-      let myXML = getXMLpayload("oadrResponse", oadrResponse);
+      let XMLpayload = getXMLpayload("oadrResponse", oadrResponse);
       //console.log('Event Names:', ee.eventNames());
-      ee.emit(params.requestID, myXML);
+      ee.emit(params.requestID, XMLpayload);
     };
 
     const CreateOpt = function (msg, done) {
@@ -910,9 +917,9 @@ module.exports = function (RED) {
         };
       }
 
-      let myXML = getXMLpayload("oadrCreateOpt", oadrCreateOpt);
+      let XMLpayload = getXMLpayload("oadrCreateOpt", oadrCreateOpt);
 
-      sendRequest(node.url, "EiOpt", myXML, function (body) {
+      sendRequest(node.url, "EiOpt", XMLpayload, function (body) {
         let msg = prepareResMsg(uuid, inCmd, body);
         node.send(msg);
       });
@@ -933,12 +940,12 @@ module.exports = function (RED) {
         "ei:venID": _ids.venID,
       };
 
-      let myXML = getXMLpayload("oadrCancelOpt", oadrCancelOpt);
+      let XMLpayload = getXMLpayload("oadrCancelOpt", oadrCancelOpt);
 
       sendRequest(
         node.url,
         "EiOpt",
-        myXML,
+        XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
           node.send(msg);
@@ -973,7 +980,7 @@ module.exports = function (RED) {
               RequestEvent(msg, done);
               break;
             case "RegisterReport":
-              RegisterReport(msg.done);
+              RegisterReport(msg, done);
               break;
             case "RegisteredReport":
               RegisteredReport(msg, done);

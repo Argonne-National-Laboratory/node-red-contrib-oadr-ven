@@ -2,7 +2,7 @@
 All Rights Reserved
  Software Name: node-red-contrib-oadr-ven (ANL- SF-18-105)
 By: Argonne National Laboratory Chicago Software Solutions
-Authors: Jason D. Harper, Bryan Nystrom
+Authors: Bryan Nystrom
 OPEN SOURCE LICENSE (BSD)
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
