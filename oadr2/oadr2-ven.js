@@ -24,7 +24,7 @@ const db = require("debug");
 const debug = db("anl:oadr");
 
 // this is used to create unique IDs (if not provided)
-const uuidv4 = require("uuid/v4");
+const { v4: uuidv4} = require("uuid");
 
 // const xmlconvert = require('xml-js');
 
