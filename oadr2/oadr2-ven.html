@@ -1,3 +1,11 @@
+<!---
+
+  Title: Node-Red-Contrib-OADR2-VEN
+  Author: Bryan Nystrom
+  Company: Argonne National Laborator
+
+---!>
+
 <style>
     .header {
         text-decoration: underline;
@@ -22,12 +30,16 @@
             url: {value:"",validate:function(v) { return (v.trim().length === 0) || (v.indexOf("://") === -1) || (v.trim().indexOf("http") === 0)} },
             tls: {type:"tls-config",required: false},
             profile: { value: "2.0b", required: true},
-            pushport: { value: 80, required: false, validate:function(v) { return (v.trim().length === 0) || (v.indexOf("://") === -1) || (v.trim().indexOf("http") === 0)} },
+            pushport: { value: "", required: false, validate:function(v) { return (v.trim().length == 0 || isNaN(v) == false)} },
             pushurl: {value: "", required: false},
             venid: {value: "", required: false},
             pollrate: {value: "5", required: false},
             log: { value: false, required: true },
             pathlog: {value: "", required: false}
+        },
+        credentials: {
+            authuser: {type: "text"},
+            authpw: {type: "password"}
         },
         inputs: 1,
         outputs: 1,
@@ -71,8 +83,12 @@
         <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
     </div>
     <div class="form-row">
-        <label for="node-input-url"><i class="fa fa-globe"></i> <span data-i18n="httpin.label.url"></span>URL</label>
-        <input id="node-input-url" type="text" placeholder="http://">
+        <label for="node-input-url"><i class="fa fa-globe"></i> <span data-i18n="httpin.label.url"></span>VTN URL</label>
+        <input id="node-input-url" type="text" placeholder="http://vtn.ip.com:port">
+    </div>
+    <div class="form-row">
+        <label for="node-input-venid"><i class="fa fa-tag"></i> VEN ID</label>
+        <input type="text" id="node-input-venid" placeholder="2.0b optional/2.0a required">
     </div>
     <div class="form-row">
         <label for="node-input-profile"><i class="fa fa-tag"></i>Profile</label>
@@ -82,18 +98,23 @@
         </select>
     </div>
     <div class="form-row">
-            <label for="node-input-pushport"><i class="fa fa-tag"></i> Push Port</label>
-            <input type="text" id="node-input-pushport">
-        </div>
-    <div class="form-row">
-        <label for="node-input-pushurl"><i class="fa fa-tag"></i> Push URL</label>
-        <input type="text" id="node-input-pushurl">
+      <label for="node-input-pushurl"><i class="fa fa-globe"></i> Push URL</label>
+      <input type="text" id="node-input-pushurl" placeholder="optional">
     </div>
     <div class="form-row">
-        <label for="node-input-venid"><i class="fa fa-tag"></i> VEN ID</label>
-        <input type="text" id="node-input-venid" placeholder="optional">
+            <label for="node-input-pushport"><i class="fa fa-hashtag"></i> Push Port</label>
+            <input type="text" id="node-input-pushport" placeholder="optional">
     </div>
-        
+    <h3>Authentication</h3>
+    <div class="form-row">
+      <label for="node-input-authuser"><i class="fa fa-user"></i> Username</label>
+      <input type="text" id="node-input-authuser" placeholder="optional">
+    </div>
+    <div class="form-row">
+      <label for="node-input-authpw"><i class="fa fa-lock"></i> Password</label>
+      <input type="password" id="node-input-authpw" placeholder="optional">
+    </div>
+      
     <div class="form-row">
         <input type="checkbox" id="node-input-usetls" style="display: inline-block; width: auto; vertical-align: top;">
         <label for="node-input-usetls" style="width: auto" data-i18n="httpin.use-tls">Enable secure (SSL/TLS) connection</label>
@@ -101,6 +122,7 @@
             <label style="width: auto; margin-left: 20px; margin-right: 10px;" for="node-input-tls"><span data-i18n="httpin.tls-config"></span></label><input type="text" style="width: 300px" id="node-input-tls">
         </div>
     </div>
+
     <div class="form-tips" id="tip-json" hidden><span data-i18n="httpin.tip.req"></span></div>
     
 </script>
@@ -116,12 +138,16 @@
         <dd>The url of the VTN</dd>
         <dt>Profile</dt>
         <dd>The profile (2.0a or 2.0b) that this VEN is supporting</dd>        
-        <dt>Push Port</dt>
-        <dd>The port used for VTN push messages</dd>
         <dt>Push ULR</dt>
         <dd>Default VEN URL (without the port number path). Used by CreatePartyRegistration (2.0b only) if set</dd>
+        <dt>Push Port</dt>
+        <dd>The port used for VTN push messages</dd>
         <dt>VEN ID</dt>
         <dd>Optional vendor ID. Useful for 2.0a VEN setups</dd>        
+        <dt>Username</dt>
+        <dd>Optional username for basic authentication</dd>
+        <dt>Password</dt>
+        <dd>Optional password for basic authentication</dd>
         <dt>Enable secure (SSL/TLS) connection</dt>
         <dd>Configure secure connections to the VTN</dd>        
     </dl>
@@ -174,6 +200,7 @@
                 </li>
             </ul>
             <br/>
+            If the Ven Name contains a period, it will be converted to an underscore for the global context name. Therefore abcd.ven becomes abcd_ven in the context area.
         </p>
 
         <p>If push is enabled, the response to each incoming message has a lifespan timeout of 2 minutes, so any
