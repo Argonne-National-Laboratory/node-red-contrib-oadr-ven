@@ -26,8 +26,6 @@ const debug = db("anl:oadr");
 // this is used to create unique IDs (if not provided)
 const { v4: uuidv4} = require("uuid");
 
-// const xmlconvert = require('xml-js');
-
 // this is used to convert from XML to javascript objects
 const xmlconvert = require("fast-xml-parser");
 
@@ -37,6 +35,8 @@ const convert = d2xml();
 const app = express();
 
 const EventEmitter = events.EventEmitter;
+
+const https = require('https')
 
 let tlsNode;
 let oadrProfile;
@@ -187,14 +187,24 @@ module.exports = function (RED) {
       method: "POST",
       headers: {
         "content-type": "application/xml", // <--Very important!!!
+        "accept": "*/*",
       },
+      withCredentials: true,
+      rejectUnauthorized: false,
     };
+
+    let options2 = {};
 
     if (tlsNode) {
       //console.log("Adding TLS options");
       //
-      tlsNode.addTLSOptions(options);
+      tlsNode.addTLSOptions(options2);
+      options2.keepAlive = true;
+      options2.rejectUnauthorized = false;
+      options2.data = xml;
+      options.httpsAgent = new https.Agent( options2 );
     }
+
 
     if (authuser !== "" && authpw !== "") {
       options.auth = { username: authuser, password: authpw };
@@ -210,16 +220,6 @@ module.exports = function (RED) {
             cb(response.data);
           }
         }
-        // ,
-        // function (error) {
-        //   debug("ERROR: %s", error);
-        //   if (done) {
-        //     // Node-RED 1.0 compatible
-        //     done(error);
-        //   } else {
-        //     node.error(error, msg);
-        //   }
-        // }
       )
       .catch(function (error) {
         if (error.response) {
@@ -227,25 +227,25 @@ module.exports = function (RED) {
           debug("REQUEST ERROR DATA: %s", error.response.data);
           if (done) {
             done(
-              `OADR Req Err: ${error.response.status}\n${error.response.data}`
+              `OADR Req Err1: ${error.response.status}\n${error.response.data}`
             );
           } else {
             node.error(
-              `OADR Req Err: ${error.response.status}`,
+              `OADR Req Err2: ${error.response.status}`,
               error.response.data
             );
           }
         } else if (error.request) {
           debug(error.request);
           if (done) {
-            done(`OADR Req Err: ${error.request}`);
+            done(`OADR Req Err: ${error.message}`);
           } else {
-            node.error("OADR Req Err:", error.request);
+            node.error("OADR Req Err4:", error.request);
           }
         } else {
           debug("ERROR %s", error.message);
           if (done) {
-            done("Error: ${error.message}");
+            done(`Error: ${error.message}`);
           } else {
             node.error(" Error:", error.message);
           }
@@ -405,8 +405,8 @@ module.exports = function (RED) {
         "EiRegisterParty",
         XMLpayload,
         // function (err, response, body) {
-        function (response) {
-          let msg = prepareResMsg(uuid, inCmd, data);
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
 
           if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
             let oadrObj = msg.payload.data[msg.oadr.responseType];
