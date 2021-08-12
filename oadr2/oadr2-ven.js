@@ -260,12 +260,18 @@ module.exports = function (RED) {
     RED.nodes.createNode(this, config);
     const node = this;
 
-    if (config.tls) {
-      tlsNode = RED.nodes.getNode(config.tls);
+    this.vtnconfig = RED.nodes.getNode(config.vtnconfig);
+
+    this.url = this.vtnconfig.url;
+    this.tls = this.vtnconfig.tls;
+    this.creds = this.vtnconfig.credentials; 
+
+    if (this.tls) {
+      tlsNode = RED.nodes.getNode(this.tls);
     }
 
-    authuser = this.credentials.authuser || "";
-    authpw = this.credentials.authpw || "";
+    authuser = this.authuser || "";
+    authpw = this.authpw || "";
 
     oadrProfile = config.profile || "2.0b";
 
@@ -361,7 +367,7 @@ module.exports = function (RED) {
 
     // make local copies of our configuration
     this.logging = typeof config.log === "boolean" ? config.log : false;
-    this.url = config.url;
+    this.url = this.vtnconfig.url;
     this.pathlog = config.pathlog;
     this.name = config.name || "OADR2 VEN";
 
@@ -407,7 +413,7 @@ module.exports = function (RED) {
         // function (err, response, body) {
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
-
+          msg.oadr.venName = node.name;
           if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
             let oadrObj = msg.payload.data[msg.oadr.responseType];
             if (oadrObj.eiResponse.responseCode === 200) {
@@ -484,7 +490,7 @@ module.exports = function (RED) {
         function (body) {
           debug(body);
           let msg = prepareResMsg(uuid, inCmd, body);
-
+          msg.oadr.venName = node.name;
           if (msg.oadr.responseType == "oadrCreatedPartyRegistration") {
             let oadrObj = msg.payload.data[msg.oadr.responseType];
             if (oadrObj.eiResponse.responseCode === 200) {
@@ -545,6 +551,7 @@ module.exports = function (RED) {
         XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
 
           if (msg.oadr.responseType == "oadrCanceledPartyRegistration") {
             let oadrObj = msg.payload.data[msg.oadr.responseType];
@@ -595,6 +602,7 @@ module.exports = function (RED) {
         XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
           node.send(msg);
         },
         done
@@ -666,6 +674,7 @@ module.exports = function (RED) {
         XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
           node.send(msg);
         },
         done
@@ -729,6 +738,7 @@ module.exports = function (RED) {
         XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
           node.send(msg);
         },
         done
@@ -765,6 +775,7 @@ module.exports = function (RED) {
         XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
           node.send(msg);
         },
         done
@@ -791,6 +802,7 @@ module.exports = function (RED) {
         XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
           node.send(msg);
         },
         done
@@ -822,6 +834,7 @@ module.exports = function (RED) {
         XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
           node.send(msg);
         },
         done
@@ -921,6 +934,7 @@ module.exports = function (RED) {
 
       sendRequest(node.url, "EiOpt", XMLpayload, function (body) {
         let msg = prepareResMsg(uuid, inCmd, body);
+        msg.oadr.venName = node.name;
         node.send(msg);
       });
     };
@@ -948,6 +962,7 @@ module.exports = function (RED) {
         XMLpayload,
         function (body) {
           let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
           node.send(msg);
         },
         done
