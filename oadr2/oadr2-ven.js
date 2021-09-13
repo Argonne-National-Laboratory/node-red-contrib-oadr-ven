@@ -265,6 +265,8 @@ module.exports = function (RED) {
     this.url = this.vtnconfig.url;
     this.tls = this.vtnconfig.tls;
     this.creds = this.vtnconfig.credentials; 
+    this.authuser = this.vtnconfig.authuser;
+    this.authpw = this.vtnconfig.authpw;
 
     if (this.tls) {
       tlsNode = RED.nodes.getNode(this.tls);
