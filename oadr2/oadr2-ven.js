@@ -209,14 +209,13 @@ module.exports = function (RED) {
     if (authuser !== "" && authpw !== "") {
       options.auth = { username: authuser, password: authpw };
     }
-    // options.body = xml;
     options.data = xml;
-
-    // request(options, cb);
+    debug("Request: %s", xml);
     axios(options)
       .then(
         function (response) {
           if (response.status >= 200 && response.status < 300) {
+            debug("Response: %s", response.data);
             cb(response.data);
           }
         }
@@ -993,6 +992,9 @@ module.exports = function (RED) {
             case "CancelPartyRegistration":
               CancelPartyRegistration(msg, done);
               break;
+            case "CanceledPartyRegistration":
+              CanceledPartyRegistration(msg, done);
+              break;
             case "RequestEvent":
               RequestEvent(msg, done);
               break;
@@ -1002,8 +1004,23 @@ module.exports = function (RED) {
             case "RegisteredReport":
               RegisteredReport(msg, done);
               break;
+            case "CreateReport":
+              CreateReport(msg, done);
+              break;
+            case "CreatedReport":
+              CreatedReport(msg, done);
+              break;
             case "UpdateReport":
               UpdateReport(msg, done);
+              break;
+            case "UpdatedReport":
+              UpdatedReport(msg, done);
+              break;
+            case "CancelReport":
+              CancelReport(msg, done);
+              break;
+            case "CanceledReport":
+              CanceledReport(msg, done);
               break;
             case "Poll":
               Poll(msg, done);
