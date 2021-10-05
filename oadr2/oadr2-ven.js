@@ -686,7 +686,8 @@ module.exports = function (RED) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
-
+      let reportForm = params.reportForm; 
+      debug(reportForm);
       let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
 
       let venID = params.venID || "";
@@ -695,26 +696,62 @@ module.exports = function (RED) {
       }
 
       let oadrRegisterReport = {
-        _attr: payloadAttr,
-        "pyld:requestID": {
+        _attr: {
+            "ei:schemaVersion": "2.0b",
+            "xmlns:ei": "http://docs.oasis-open.org/ns/energyinterop/201110"
+        },
+        requestID: {
+          _attr: { xmlns: "http://docs.oasis-open.org/ns/energyinterop/201110/payloads" },
           _value: uuid,
         },
         oadrReport: {
-          duration: {
-            _attr: { xmlns: "urn:ietf:params:xml:ns:icalendar-2.0" },
-            duration: params.duration,
+          _attr: { "xmlns:xcal": "urn:ietf:params:xml:ns:icalendar-2.0" }, 
+          "xcal:duration": {
+            "xcal:duration": params.duration
           },
-          oadrReportDescription: {
+          "ei:eiReportID": params.reportID || "",
+          oadrReportDescription : {
+            _attr: { "xmlns:emix": "http://docs.oasis-open.org/ns/emix/2011/06",
+              "xmlns:power": "http://docs.oasis-open.org/ns/emix/2011/06/power"
+            },
             "ei:rID": params.rID || "",
+            "ei:reportSubject": params.reportSubject || "",
             "ei:reportDataSource": {
-              "ei:resourceID": params.resourceID || "",
+              "ei:resourceID": params.dataSource || "",
             },
             "ei:reportType": params.reportType || "",
-            "ei:readingType": params.readingType || "x-notApplicable",
             marketContext: {
               _attr: { xmlns: "http://docs.oasis-open.org/ns/emix/2011/06" },
-              _value: params.marketContext,
+              _value: params.marketContext || "",
             },
+            REPLACE_REPORT_TYPE: 99999999,
+            /*
+            "power:powerReal": {
+              _attr: { 
+                "xmlns:scale": "http://docs.oasis-open.org/ns/emix/2011/06/siscale",
+                "xmlns:power": "http://docs.oasis-open.org/ns/emix/2011/06/power"
+              },
+              "power:itemDescription": "RealPower",
+              "power:itemUnits": "W",
+              "scale:siScaleCode": "none",
+              "power:powerAttributes": {
+                "power:hertz": 1,
+                "power:voltage": 1,
+                "power:ac": true
+              }
+            },
+            /*
+            "power:voltage" : {
+              _attr: { 
+                "xmlns:scale": "http://docs.oasis-open.org/ns/emix/2011/06/siscale",
+                "xmlns:power": "http://docs.oasis-open.org/ns/emix/2011/06/power"
+              },
+              "power:itemDescription": "Voltage",
+              "power:itemUnits": "V",
+              "scale:siScaleCode": "none",
+            },
+            */
+            "ei:readingType": params.readingType || "x-notApplicable",
             oadrSamplingRate: {
               oadrMinPeriod: params.oadrMinPeriod || "PT1M",
               oadrMaxPeriod: params.oadrMaxPeriod || "PT1M",
@@ -722,12 +759,45 @@ module.exports = function (RED) {
             },
           },
           "ei:reportRequestID": params.reportRequestID || 0,
-          "ei:reportSpecifierID": params.reportSpecifierID || uuidv4(),
+          "ei:reportSpecifierID": params.reportSpecifierID || "",
           "ei:reportName": params.reportName || "",
           "ei:createdDateTime": params.createdDateTime,
         },
         "ei:venID": params.venID || _ids.venID || venID,
       };
+      let oadrStrRpt = JSON.stringify(oadrRegisterReport);
+      oadrStrRpt = oadrStrRpt.replace("99999999,","");
+      let rptStr = JSON.stringify(reportForm);
+      oadrStrRpt = oadrStrRpt.replace("\"REPLACE_REPORT_TYPE\":",rptStr.substring(1,rptStr.length -1) + ",");
+      debug('---------------------------------------------');
+      debug(oadrStrRpt);
+      debug('---------------------------------------------');
+      debug(" ");
+      oadrRegisterReport = JSON.parse(oadrStrRpt);
+      // Remove any optional params
+      // minOccurs = 0
+      if (oadrRegisterReport.oadrReport.oadrReportDescription["ei:reportSubject"] == ""){
+        delete oadrRegisterReport.oadrReport.oadrReportDescription["ei:reportSubject"]; 
+      }
+      if (oadrRegisterReport.oadrReport.oadrReportDescription["ei:reportDataSource"]["ie:resourceID"] == ""){
+        delete oadrRegisterReport.oadrReport.oadrReportDescription["ei:reportDataSource"]["ie:resourceID"];  
+      }
+      if (oadrRegisterReport.oadrReport.oadrReportDescription.marketContext["_value"] == ""){
+        delete oadrRegisterReport.oadrReport.oadrReportDescription.marketContext;  
+      }
+//      if (oadrRegisterReport.oadrReport["ei:reportID"] == ""){
+//        delete oadrRegisterReport.oadrReport["ei:reportID"]; 
+//      }
+//      if (oadrRegisterReport.oadrReport["ei:reportRequestID"] == ""){
+//        delete oadrRegisterReport.oadrReport["ei:reportRequestID"];
+//      }
+//      if (oadrRegisterReport.oadrReport["ei:reportSpecifierID"] == ""){
+//        delete oadrRegisterReport.oadrReport["ei:reportSpecifierID"];
+//      }
+//      if (oadrRegisterReport.oadrReport["ei:reportName"] == ""){
+//        delete oadrRegisterReport.oadrReport["ei:reportName"];
+//      }
+
 
       let XMLpayload = getXMLpayload("oadrRegisterReport", oadrRegisterReport);
 
@@ -769,6 +839,38 @@ module.exports = function (RED) {
       };
 
       let XMLpayload = getXMLpayload("oadrRegisteredReport", oadrRegisteredReport);
+
+      sendRequest(
+        node.url,
+        "EiReport",
+        XMLpayload,
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
+          node.send(msg);
+        },
+        done
+      );
+    };
+
+    const CreatedReport = function (msg, done) {
+      let params = msg.payload;
+      let inCmd = msg.payload.requestType || "unknown";
+      let uuid = params.requestID || uuidv4();
+
+      let oadrCreatedReport = {
+        _attr: payloadAttr,
+        "ei:eiResponse" : {
+          responseCode: 200,
+          responseDescription: "OK",
+          requestID: params.requestID
+        },
+        "oadrPendingReports": {
+
+        }
+      };
+
+      let XMLpayload = getXMLpayload("oadrCreatedReport", oadrCreatedReport);
 
       sendRequest(
         node.url,
