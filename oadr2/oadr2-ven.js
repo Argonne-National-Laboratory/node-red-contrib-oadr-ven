@@ -687,7 +687,6 @@ module.exports = function (RED) {
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
       let reportForm = params.reportForm; 
-      debug(reportForm);
       let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
 
       let venID = params.venID || "";
@@ -769,10 +768,6 @@ module.exports = function (RED) {
       oadrStrRpt = oadrStrRpt.replace("99999999,","");
       let rptStr = JSON.stringify(reportForm);
       oadrStrRpt = oadrStrRpt.replace("\"REPLACE_REPORT_TYPE\":",rptStr.substring(1,rptStr.length -1) + ",");
-      debug('---------------------------------------------');
-      debug(oadrStrRpt);
-      debug('---------------------------------------------');
-      debug(" ");
       oadrRegisterReport = JSON.parse(oadrStrRpt);
       // Remove any optional params
       // minOccurs = 0
@@ -858,16 +853,23 @@ module.exports = function (RED) {
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
 
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
+
+      let venID = "";
+      if (ids) {
+        venID = ids.venID;
+      }
       let oadrCreatedReport = {
         _attr: payloadAttr,
         "ei:eiResponse" : {
-          responseCode: 200,
-          responseDescription: "OK",
-          requestID: params.requestID
+          "ei:responseCode": 200,
+          "ei:responseDescription": "OK",
+          "pyld:requestID": params.requestID || uuid
         },
         "oadrPendingReports": {
-
-        }
+          "ei:reportRequestID": ""
+        },
+        "ei:venID": params.venID || _ids.venID || venID,
       };
 
       let XMLpayload = getXMLpayload("oadrCreatedReport", oadrCreatedReport);
@@ -889,13 +891,73 @@ module.exports = function (RED) {
       let params = msg.payload;
       let inCmd = msg.payload.requestType || "unknown";
       let uuid = params.requestID || uuidv4();
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
+
+      let venID = params.venID || "";
+      if (ids) {
+        venID = ids.venID;
+      }
 
       let oadrUpdateReport = {
-        _attr: payloadAttr,
-        "pyld:requestID": {
+        _attr: {
+            "ei:schemaVersion": "2.0b",
+            "xmlns:ei": "http://docs.oasis-open.org/ns/energyinterop/201110"
+        },
+        requestID: {
+          _attr: { xmlns: "http://docs.oasis-open.org/ns/energyinterop/201110/payloads" },
           _value: uuid,
         },
-      };
+        oadrReport: {
+          _attr: { "xmlns:xcal": "urn:ietf:params:xml:ns:icalendar-2.0" }, 
+          "xcal:dtstart": {
+            "xcal:date-time": params.dtStartDateTime || ""
+          },
+          "strm:intervals": {
+            _attr: { "xmlns:strm": "urn:ietf:params:xml:ns:icalendar-2.0:stream" },
+            "ei:interval": {
+              "xcal:dtstart": {
+                "xcal:date-time": params.intervalDateTime ||"",
+              },
+              "oadrReportPayload": {
+                "ei:rID": params.rID || "",
+                "ei:confidence": params.confidence || "",
+                "ei:accuracy": params.accuracy || "",
+                "ei:payloadFloat": {
+                  "ei:value": params.value || 0.0
+                },
+                "oadr:oadrDataQuality": params.dataQuality | "",
+              },
+            },
+          },
+          "ei:eiReportID": params.reportID || "",
+          "ei:reportRequestID": params.reportRequestID || 0,
+          "ei:reportSpecifierID": params.reportSpecifierID || 0,
+          "ei:reportName": params.reportName || "",
+          "ei:createdDateTime": params.createdDateTime || ""
+        },
+        "ei:venID": params.venID || _ids.venID || venID,
+      }
+
+      // Remove any optional elements
+      // 
+      if ( oadrUpdateReport.oadrReport["xcal:dtstart"]["xcal:date-time"] == "" ){
+        delete oadrUpdateReport.oadrReport["xcal:dtstart"];
+      }
+
+      if (oadrUpdateReport.oadrReport["strm:intervals"]["ei:interval"]["oadrReportPayload"]["ei:confidence"] == ""){
+        delete oadrUpdateReport.oadrReport["strm:intervals"]["ei:interval"]["oadrReportPayload"]["ei:confidence"];
+      }
+
+      if (oadrUpdateReport.oadrReport["strm:intervals"]["ei:interval"]["oadrReportPayload"]["ei:accuracy"] == ""){
+        delete oadrUpdateReport.oadrReport["strm:intervals"]["ei:interval"]["oadrReportPayload"]["ei:accuracy"];
+      }
+      if (oadrUpdateReport.oadrReport["strm:intervals"]["ei:interval"]["oadrReportPayload"]["oadr:oadrDataQuality"] == ""){
+        delete oadrUpdateReport.oadrReport["strm:intervals"]["ei:interval"]["oadrReportPayload"]["oadr:oadrDataQuality"];
+      }
+      if (oadrUpdateReport.oadrReport["ei:reportName"] == ""){
+        delete oadrUpdateReport.oadrReport["ei:reportName"];
+      }
+
 
       let XMLpayload = getXMLpayload("oadrUpdateReport", oadrUpdateReport);
 
