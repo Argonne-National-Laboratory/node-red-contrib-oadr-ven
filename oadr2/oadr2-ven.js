@@ -867,7 +867,7 @@ module.exports = function (RED) {
           "pyld:requestID": params.requestID || uuid
         },
         "oadrPendingReports": {
-          "ei:reportRequestID": ""
+          "ei:reportRequestID": params.pendingReportRequestIDs || "", 
         },
         "ei:venID": params.venID || _ids.venID || venID,
       };
@@ -960,6 +960,82 @@ module.exports = function (RED) {
 
 
       let XMLpayload = getXMLpayload("oadrUpdateReport", oadrUpdateReport);
+
+      sendRequest(
+        node.url,
+        "EiReport",
+        XMLpayload,
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
+          node.send(msg);
+        },
+        done
+      );
+    };
+
+    const CancelReport = function (msg, done) {
+      let params = msg.payload;
+      let inCmd = msg.payload.requestType || "unknown";
+      let uuid = params.requestID || uuidv4();
+
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
+
+      let venID = "";
+      if (ids) {
+        venID = ids.venID;
+      }
+      let oadrCancelReport = {
+        _attr: payloadAttr,
+        requestID: uuid,
+        "ei:reportRequestID": params.reportRequestID,
+        reportToFollow: {
+          _attr: { "xmlns" : "http://docs.oasis-open.org/ns/energyinterop/201110/payloads" },
+          _value: params.reportToFollow || false
+        },
+        "ei:venID": params.venID || _ids.venID || venID,
+      };
+
+      let XMLpayload = getXMLpayload("oadrCancelReport", oadrCancelReport);
+
+      sendRequest(
+        node.url,
+        "EiReport",
+        XMLpayload,
+        function (body) {
+          let msg = prepareResMsg(uuid, inCmd, body);
+          msg.oadr.venName = node.name;
+          node.send(msg);
+        },
+        done
+      );
+    };
+
+    const CanceledReport = function (msg, done) {
+      let params = msg.payload;
+      let inCmd = msg.payload.requestType || "unknown";
+      let uuid = params.requestID || uuidv4();
+
+      let ids = flowContext.get(`${node.name}:IDs`.replace(".", "_"));
+
+      let venID = "";
+      if (ids) {
+        venID = ids.venID;
+      }
+      let oadrCanceledReport = {
+        _attr: payloadAttr,
+        "ei:eiResponse" : {
+          "ei:responseCode": 200,
+          "ei:responseDescription": "OK",
+          "pyld:requestID": params.requestID || uuid
+        },
+        "oadrPendingReports": {
+          "ei:reportRequestID": params.pendingReportRequestIDs || "" 
+        },
+        "ei:venID": params.venID || _ids.venID || venID,
+      };
+
+      let XMLpayload = getXMLpayload("oadrCanceledReport", oadrCanceledReport);
 
       sendRequest(
         node.url,
